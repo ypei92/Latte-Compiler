@@ -8,5 +8,5 @@ class Connection:
 
 
 def add_connections(net, src, sink, mapping):
-	net[net.index(sink)].connections = Connection(src, mapping)
+	net[net.index(sink)].connections.append(Connection(src, mapping))
 	
