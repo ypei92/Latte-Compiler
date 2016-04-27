@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 class Connection:
 	
 	def __init__(self, ensemble, function):
