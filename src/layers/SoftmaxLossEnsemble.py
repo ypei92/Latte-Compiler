@@ -41,9 +41,31 @@ def SoftmaxLossLayer(name, net, input_ensemble, label_ensemble):
 
 def forward(loss, prob, input, label):
     loss[0] = 0.0
-    for n in 0:len(input[0]):
-        maxval = -
+    for n in 0:len(input[0]) :
+        maxval = float("-inf")
+        for i in 0:len(input) :
+            maxval = max(maxval, input[i][n])
+        for i in 0:len(input) :
+            prob[i][n] = exp(input[i][n] - maxval)
+        the_sum = 0.0
+        for i in 0:len(input) :
+            the_sum += prob[i][n]
+        for i in 0:len(input) :
+            prob[i][n] /= the_sum
+
+    for n in 0:len(input[0]) :
+        #rounding DIFFERENCE
+        label_value = int(round(label[0][n])
+        loss[0] -= log(max(prob[label_value][n], sys.float_info.epsilon))
+    loss[0] /= len(input[0])
+    return 0
 
 def back(prob, diff, label):
-    pass
+    for i in 0:len(diff):
+        diff[i] = prob[i]
+    for n in 0:len(diff[0]):
+        label_value = int(round(label[0][n])
+        diff[label_value][n] -= 1
+    for i in 0:len(diff):
+        
 
