@@ -7,3 +7,4 @@ class Ensemble:
         self.neurons = neurons
         self.params = params
         self.connections = connections
+        net.ensembles.append(self)

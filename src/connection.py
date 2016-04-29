@@ -6,5 +6,5 @@ class Connection:
         self.mapping = function
 
 def add_connections(net, src, sink, mapping):
-    net[net.index(src)].connections.append(Connection(sinsinkk, mapping))
+    sink.connections.append(Connection(src, mapping))
 	
