@@ -11,12 +11,12 @@ class WeightedNeuron(Neuron):
 	self.gd_bias = gd_bias
 
     def forward(neuron):
-        for i in 0:len(neuron.inputs[0]):
+        for i in range(0, len(neuron.inputs[0])):
             neuron.value += neuron.weights[i] * neuron.inputs[0][i]
         neuron.value += neuron.bias[0]
 
     def backward(neuron):
-        for i in 0:len(neuron.inputs[0]):
+        for i in range(0, len(neuron.inputs[0])):
             neuron.gd_inputs[0][i] += neuron.weights[i] * neuron.gd_value
             neuron.gd_weights[i]+= neuron.inputs[0][i] * neuron.gd_value
         neuron.gd_bias[0] += neuron.gd_value
@@ -33,7 +33,7 @@ def FullyConnectedLayer(name, net, input_ensemble, size):
 
     neurons = []
 
-    for i in 0:size :
+    for i in range(0, size) :
         neurons.append(WeightedNeuron(weights[i], gd_weights[i], bias[0][i], gd_bias[0][i]))
     ens = Ensemble(net, name, neurons, [Param(name, "weights", 1.0, 1.0),\ 
                                         Param(name, "bias", 2,0, 0.0)]) 
