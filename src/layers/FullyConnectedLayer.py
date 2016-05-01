@@ -5,11 +5,11 @@ import numpy as np
 
 class WeightedNeuron(Neuron):
     def __init__(self, weights, gd_weights, bias, gd_bias):
-	Neuron.__init__(self)
-	self.weights = weights
-	self.gd_weights = gd_weights
-	self.bias = bias
-	self.gd_bias = gd_bias
+	   Neuron.__init__(self)
+	   self.weights = weights
+	   self.gd_weights = gd_weights
+	   self.bias = bias
+	   self.gd_bias = gd_bias
 
     def forward(neuron):
         for i in 0:len(neuron.inputs[0]):
@@ -35,8 +35,8 @@ def FullyConnectedLayer(name, net, input_ensemble, size):
     neurons = np.empty(size, dtype = object)
 
     for i in 0:size :
-        neurons[i] = WeightedNeuron(weights[i], gd_weights[i], bias[0][i], gd_bias[0][i])
-        
+        neurons[i] = WeightedNeuron(weights[:, i], gd_weights[:, i], bias[:, i], gd_bias[:, i])
+
     ens = Ensemble(net, name, neurons, [Param(name, "weights", 1.0, 1.0),\ 
                                         Param(name, "bias", 2,0, 0.0)]) 
 

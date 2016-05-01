@@ -60,7 +60,7 @@ def forward(loss, prob, input, label):
     loss[0] /= input.shape[1]
     return 0
 
-def back(prob, diff, label):
+def backward(prob, diff, label):
     for i in 0:diff.size :
         diff[i] = prob[i]
     for n in 0:diff.shape[1] :
