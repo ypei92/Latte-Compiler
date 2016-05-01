@@ -27,10 +27,10 @@ def FullyConnectedLayer(name, net, input_ensemble, size):
     num_inputs = len(input_ensemble.neuron)
 
     weights = xavier(num_inputs, size)
-    gd_weights = zeros(num_inputs, size)
+    gd_weights = np.zeros((num_inputs, size), dtype = float)
 
-    bias = zeros(1, size)
-    gd_bias = zeros(1, size)
+    bias = np.zeros((1, size), dtype = float)
+    gd_bias = np.zeros((1, size), dtype = float)
 
     neurons = np.empty(size, dtype = object)
 
@@ -41,7 +41,9 @@ def FullyConnectedLayer(name, net, input_ensemble, size):
                                         Param(name, "bias", 2,0, 0.0)]) 
 
     def mapping:
-        indices = [(0, num_inputs)]
+        indices = []
+        for d in input_ensemble.neuron.shape :
+            indices.append((0, d))
         return indices
 
     add_connections(net, input_ensemble, ens, mapping)

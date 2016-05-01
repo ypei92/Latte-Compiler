@@ -20,7 +20,7 @@ class EmbedNeuron(Neuron):
 def EmbedIDLayer(name, net, input_ensemble, in_size, out_size):
     assert(input_ensemble.neurons.size == 1)
     weights = xavier(in_size, out_size)
-    gd_weights = zeros(in_size, out_size)
+    gd_weights = np.zeros((in_size, out_size), dtype = float)
 
     neurons = np.empty(1, dtype = object)
 
