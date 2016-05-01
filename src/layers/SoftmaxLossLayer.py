@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import math
 
 class SoftmaxLossNeuron:
     def __init__(self, value = 0.0, gd_value = 0.0):
@@ -46,7 +47,7 @@ def forward(loss, prob, input, label):
         for i in 0:input.shape[0] :
             maxval = max(maxval, input[i][n])
         for i in 0:input.shape[0] :
-            prob[i][n] = exp(input[i][n] - maxval)
+            prob[i][n] = math.exp(input[i][n] - maxval)
         the_sum = 0.0
         for i in 0:input.shape[0] :
             the_sum += prob[i][n]
@@ -56,7 +57,7 @@ def forward(loss, prob, input, label):
     for n in 0:input.shape[1] :
         #rounding DIFFERENCE
         label_value = int(round(label[0][n])
-        loss[0] -= log(max(prob[label_value][n], sys.float_info.epsilon))
+        loss[0] -= math.log(max(prob[label_value][n], sys.float_info.epsilon))
     loss[0] /= input.shape[1]
     return 0
 
