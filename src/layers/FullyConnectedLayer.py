@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from neuron import *
+import numpy as np
 
 class WeightedNeuron(Neuron):
     def __init__(self, weights, gd_weights, bias, gd_bias):
@@ -31,10 +32,11 @@ def FullyConnectedLayer(name, net, input_ensemble, size):
     bias = zeros(1, size)
     gd_bias = zeros(1, size)
 
-    neurons = []
+    neurons = np.empty(size, dtype = object)
 
     for i in range(0, size) :
         neurons.append(WeightedNeuron(weights[i], gd_weights[i], bias[0][i], gd_bias[0][i]))
+        
     ens = Ensemble(net, name, neurons, [Param(name, "weights", 1.0, 1.0),\ 
                                         Param(name, "bias", 2,0, 0.0)]) 
 
