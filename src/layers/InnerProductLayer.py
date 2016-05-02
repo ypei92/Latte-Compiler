@@ -12,17 +12,17 @@ class WeightedNeuron(Neuron):
        self.gd_bias = gd_bias
 
     def forward(neuron):
-        for i in 0:len(neuron.inputs[0]):
+        for i in range(len(neuron.inputs[0])):
             neuron.value += neuron.weights[i] * neuron.inputs[0][i]
         neuron.value += neuron.bias[0]
 
     def backward(neuron):
-        for i in 0:len(neuron.inputs[0]):
+        for i in range(len(neuron.inputs[0])):
             neuron.gd_inputs[0][i] += neuron.weights[i] * neuron.gd_value
             neuron.gd_weights[i]+= neuron.inputs[0][i] * neuron.gd_value
         neuron.gd_bias[0] += neuron.gd_value
 
-def FullyConnectedEnsemble(name, net, num_inputs, num_outputs, wieght_init = xavier, bias_init = 0):
+def FullyConnectedEnsemble(name, net, num_inputs, num_outputs, weight_init = xavier, bias_init = 0):
     neurons = np.empty(num_outputs, dtype = object)
 
     weights = weight_init(num_inputs, num_outputs)
@@ -32,7 +32,7 @@ def FullyConnectedEnsemble(name, net, num_inputs, num_outputs, wieght_init = xav
     bias.fill(bias_init)
     gd_bias = np.zeros((1,num_outputs), dtype = float)
 
-    for i in 0:num_outputs :
+    for i in range(num_outputs) :
         neurons[i] = WeightedNeuron(weights[:, i], gd_weights[:, i], bias[:, i], gd_bias[:, i])
 
     return Ensemble(net, name, neurons, [Param(name,"weights", 1.0, 1.0),\

@@ -47,21 +47,21 @@ class GRUNeuron(Neuron):
         x_r = neuron.b_r[0]
         x_h = neuron.b_h[0]
 
-        for i in 0:size(neuron.inputs[0]):
+        for i in range(size(neuron.inputs[0])):
             x_z += neuron.W_z[i] * neuron.inputs[0][i]
             x_r += neuron.W_r[i] * neuron.inputs[0][i]
             x_h += neuron.W_h[i] * neuron.inputs[0][i]
 
         u_z = 0.0
         u_r = 0.0
-        for i in 0:size(neuron.inputs[1]):
+        for i in range(size(neuron.inputs[1])):
             u_z += neuron.U_z[i] * neuron.inputs[1][i]
             u_r += neuron.U_r[i] * neuron.inputs[1][i]
 
         neuron.z = sigmoid(x_z + u_z)
         neuron.r = sigmoid(x_r + u_r)
         u_h = 0.0
-        for i in 0:size(neuron.inputs[1]):
+        for i in range(size(neuron.inputs[1])):
             u_h += neuron.U_h[i] * neuron.r * neuron.inputs[1][i]
 
         neuron.hh = tanh(x_h + u_h)
@@ -76,19 +76,19 @@ class GRUNeuron(Neuron):
         neuron.gd_inputs[1][neuron.index] = neuron.gd_value * neuron.z
         gd_h = gd_tanh(gd_hh)
         gd_r = 0.0
-        for i in 0:size(neuron.inputs[1]):
+        for i in range(size(neuron.inputs[1])):
             neuron.gd_U_h[i] += gd_h * neuron.r * neuron.inputs[1][i]
             neuron.gd_inputs[1][i] += gd_h * neuron.r * neuron.U_h[i]
             gd_r += gd_h * neuron.U_h[i] * neuron.inputs[1][i]
 
         gd_r = gd_sigmoid(gd_r)
-        for i in 0:size(neuron.inputs[1]):
+        for i in range(size(neuron.inputs[1])):
             neuron.gd_U_z[i] += gd_z * neuron.inputs[1][i]
             neuron.gd_inputs[1][i] += gd_z * neuron.U_z[i]
             neuron.gd_U_r[i] += gd_r * neuron.inputs[1][i]
             neuron.gd_inputs[1][i] += gd_r * neuron.U_r[i]
 
-        for i in 0:size(neuron.inputs[1]):
+        for i in range(size(neuron.inputs[1])):
             neuron.gd_W_z[i] += gd_z * neuron.inputs[0][i]
             neuron.gd_inputs[0][i] += gd_z * neuron.W_z[i]
             neuron.gd_W_r[i] += gd_r * neuron.inputs[0][i]
@@ -100,7 +100,8 @@ class GRUNeuron(Neuron):
         neuron.gd_b_r[0] = gd_r
         neuron.gd_b_z[0] = gd_z
 
-def GRULayer(name, net, input_ensemble, num_outputs)
+def GRULayer(name, net, input_ensemble, num_outputs):
+    
     in_out_shape = (input_ensemble.neurons.size, num_outputs)
     out_out_shape = (num_outputs, num_outputs)
 
@@ -133,7 +134,7 @@ def GRULayer(name, net, input_ensemble, num_outputs)
 
     neurons = np.empty(num_outputs, dtype = object)
 
-    for i in 0:num_outputs:
+    for i in range(num_outputs):
         neurons[i] = GRUNeuron(W_z[:,i], gd_W_z[:, i],\
             U_z[:,i], gd_U_z[:,i], b_z[:,i], gd_b_z[:,i], W_r[:,i], gd_W_r[:,i],\
             U_r[:,i], gd_U_r[:,i], b_r[:,i], gd_b_r[:,i], W_h[:,i], gd_W_h[:,i],\
