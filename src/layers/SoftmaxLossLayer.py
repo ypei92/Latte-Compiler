@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import math
+import numpy as np
 
 class SoftmaxLossNeuron:
     def __init__(self, value = 0.0, gd_value = 0.0):
@@ -7,16 +8,13 @@ class SoftmaxLossNeuron:
         self.gd_value = gd_value
 
 class SoftmaxLossEnsemble:
-    def __init__(self, name, neurons, connections, num_inputs, phase, net_subgroup):
+    def __init__(self, name, num_inputs, neurons = np.empty(0, dtype = object), connections = [], phase = Train, net_subgroup = 1):
         self.name = name
         self.neurons = neurons
         self.connections = connections
         self.num_inputs = num_inputs
         self.phase = phase
         self.net_subgroup = net_subgroup
-
-def SoftmaxLossEnsemble(name, num_inputs):
-    return SoftmaxLossEnsemble(name, [], [], num_inputs, Train, 1)
 
 def init(ensemble, net):
     net.buffers[0] = {ensemble.name + "prob":np.empty((ensemble.num_inputs, net.batch_size), dtype = float)}

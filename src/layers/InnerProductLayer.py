@@ -38,8 +38,8 @@ def FullyConnectedEnsemble(name, net, num_inputs, num_outputs, weight_init = xav
     return Ensemble(net, name, neurons, [Param(name,"weights", 1.0, 1.0),\
                                   Param(name,"bias", 2.0, 0.0)])
 
-def FullyConnectedEnsemble(net, num_inputs, num_outputs, weight_init = xavier, bias_init = 0):
-    return FullyConnectedEnsemble("ensemble", net, num_inputs, num_outputs, weight_init, bias_init)
+#def FullyConnectedEnsemble(net, num_inputs, num_outputs, weight_init = xavier, bias_init = 0):
+    #return FullyConnectedEnsemble("ensemble", net, num_inputs, num_outputs, weight_init, bias_init)
 
 def InnerProductLayer(name, net, input_ensemble, num_outputs, weight_init = xavier, bias_init = 0):
 
@@ -54,5 +54,5 @@ def InnerProductLayer(name, net, input_ensemble, num_outputs, weight_init = xavi
     add_connections(net, input_ensemble, ip, mapping)
     return ip
 
-def InnerProductLayer(net, input_ensemble, num_outputs, weight_init = xavier, bias_init = 0):
-    return InnerProductLayer("ensemble", net, input_ensemble, num_outputs, weight_init, bias_init)    
+#def InnerProductLayer(net, input_ensemble, num_outputs, weight_init = xavier, bias_init = 0):
+    #return InnerProductLayer("ensemble", net, input_ensemble, num_outputs, weight_init, bias_init)    
