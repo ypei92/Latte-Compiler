@@ -33,8 +33,8 @@ def FullyConnectedLayer(name, net, input_ensemble, size):
     gd_bias = np.zeros((1, size), dtype = float)
 
     neurons = np.empty(size, dtype = object)
-        
-    for i in range(0,size) :
+
+    for i in range(size） :
         neurons[i] = WeightedNeuron(weights[:, i], gd_weights[:, i], bias[:, i], gd_bias[:, i])
 
     ens = Ensemble(net, name, neurons, [Param(name, "weights", 1.0, 1.0),\ 

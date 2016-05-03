@@ -24,7 +24,7 @@ def EmbedIDLayer(name, net, input_ensemble, in_size, out_size):
 
     neurons = np.empty(1, dtype = object)
 
-    for i in 0:out_size : 
+    for i in range(out_size) : 
         neurons[i] = EmbedNeuron(weights[:, i], gd_weights[:, i])
 
     ens = Ensemble(net, name, neurons, [Param(name, "weights", 1.0, 1.0)])
