@@ -1,9 +1,11 @@
 #!/usr/bin/python
 
 from neuron import*
+from ensemble import*
 import numpy as np
 
-class MemoryDataEnsemble(DataEnsemble):
+#class MemoryDataEnsemble(DataEnsemble):
+class MemoryDataEnsemble(Ensemble):
     def __init__(self, name, neurons, value, phase, net_subgroup = 1):
         self.name = name
         #self.neurons = np.zeros((n,), dtype = DataNeuron) 

@@ -15,7 +15,6 @@ def xavier(*args):
     xavier_array = 2*scale*xavier_array - scale
     return xavier_array
 
-
 def batch_size(net):
     return net.batch_size
 
