@@ -3,8 +3,8 @@ import numpy as np
 
 def load_data():
     vocab = {}
-    f = open('input.txt', 'r')
-    words = list(f.read())
+    filename = open('input.txt', 'r')
+    words = list(filename.read())
     dataset = np.zeros(len(words), dtype = int)
     for i in range(len(words)):
         char = words[i]
@@ -13,6 +13,7 @@ def load_data():
         dataset[i] = vocab[char]
     print "corpus lenght : " + len(words)
     print "vocab size    : " + len(vocab)
+    filename.close()
     return dataset, words, vocab
 
 def main():
@@ -27,7 +28,7 @@ def main():
     data, data_value = MemoryDataLayer(net, 'data', (1,))
     label, label_value = MemoryDataLayer(net, 'label', (1,))
     embed = EmbedIDLayer('embed', net, data, n_vocab, n_units)
-    gru1 = GRUlayer('gru1', net, m_embed, n_units)
+    gru1 = GRUlayer('gru1', net, embed, n_units)
     gru2 = GRUlayer('gru2', net, gru1, n_units)
     fc1 = InnerProductLayer('fc1', net, gru2, n_vocab)
     loss = SoftmaxLossLayer('loss', net, fc1, label)
@@ -36,7 +37,7 @@ def main():
     jump = div(whole_len, batch_size)
     n_epochs = 100
 
-    params = SolvverParameters(
+    params = SolverParameters(
             LRPolicy.Inv(0.01, 0.0001, 0.75), \
             MomPolicy.Fixed(0.9), \
             10000, 0.0005, 1000)

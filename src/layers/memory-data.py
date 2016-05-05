@@ -19,7 +19,7 @@ class MemoryDataEnsemble(Ensemble):
     def forward(dim, ens, data, net, phase):
         if net.time_steps > 1 :
             #data = ens.value[:,:,net.curr_time_step] //Learn the colon
-            data = ens.value[:,1,net.curr_time_step] //Learn the colon
+            data = ens.value[:,0,net.curr_time_step] //Learn the colon
         else
             data = ens.value
 
@@ -39,6 +39,4 @@ def MemoryDataLayer(net, name, shape, phase = Traintest):
     ens = MemoryDataEnsemble(name, data_neurons, value, phase)
     add_ensemble(net, ens)
     return ens, value
-
-
 

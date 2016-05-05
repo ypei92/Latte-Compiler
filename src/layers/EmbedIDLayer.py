@@ -5,9 +5,9 @@ import numpy as np
 
 class EmbedNeuron(Neuron):
     def __init__(self, weights, gd_weights):
-    Neuron.__init__(self)
-    self.weights = weights
-    self.gd_weights = gd_weights
+        Neuron.__init__(self)
+        self.weights = weights
+        self.gd_weights = gd_weights
 
     def forward(neuron):
         idx = int(round(neuron.inputs[0][0]))    
