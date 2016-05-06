@@ -14,9 +14,10 @@ def gd_tanh(x):
     return x * (1.0 - x)
 
 class GRUNeuron(Neuron):
-    def __init__(self, W_z, gd_W_z, U_z, gd_U_z, b_z,\ 
+    def __init__(self, W_z, gd_W_z, U_z, gd_U_z, b_z,\
         gd_b_z, W_r, gd_W_r, U_r, gd_U_r, b_r, gd_b_r, W_h, gd_W_h, U_h,\
         gd_U_h, b_h, gd_b_h, r = 0.0, z = 0.0, hh = 0.0):
+
         self.W_z = W_z
         self.gd_W_z = gd_W_z
         self.U_z = U_z
@@ -145,7 +146,7 @@ def GRULayer(name, net, input_ensemble, num_outputs):
         Param(net, name,"b_r", 2.0), Param(net, name,"W_h", 1.0), Param(net, name,"U_h", 1.0),\
         Param(net, name,"b_h", 2.0)])
 
-    def mapping:
+    def mapping():
         indices = []
         for d in input_ensemble.neurons.shape:
             indices.append((0,d))

@@ -29,7 +29,7 @@ def EmbedIDLayer(name, net, input_ensemble, in_size, out_size):
 
     ens = Ensemble(net, name, neurons, [Param(name, "weights", 1.0, 1.0)])
 
-    def mapping:
+    def mapping():
         return [(0,0)]
         
     add_connections(net, input_ensemble, ens, mapping)

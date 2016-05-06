@@ -4,7 +4,7 @@ sys.path.append('./stdlib/layers')
 sys.path.append('../userdef/')
 
 from neuron import *
-from conncection import *
+from connection import *
 from ensemble import *
 from network import *
 from EmbedIDLayer import *
@@ -17,13 +17,21 @@ from tools import *
 import ast
 import numpy as np
 
+a = 1
+
 def main():
-    n = Neuron()
-    #top = ast.parse(neuron)
-    #print ast.dump(top)
+    topfile = sys.argv[1]
+    print('=' * 50)
+    print('Latte Compiler: Processing ', topfile)
+    print('=' * 50)
+    ftop = open(topfile)
+    top_expr = ftop.read()
+    top_ast = ast.parse(top_expr)
+    print ast_print(topfile, top_ast) 
 
 if __name__ == "__main__":
     main()
     
+
     
 

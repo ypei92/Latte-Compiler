@@ -1,4 +1,8 @@
 #!/usr/bin/python
+import sys
+sys.path.append('../../')
+
+from tools import *
 
 from neuron import *
 import numpy as np
@@ -45,9 +49,9 @@ def InnerProductLayer(name, net, input_ensemble, num_outputs, weight_init = xavi
 
     ip = FullyConnectedEnsemble(name, net, input_ensemble.neurons.size,\
                                 num_outputs, weight_init, bias_init)
-    def mapping:
+    def mapping():
         indices = []
-        for d in input_ensemble.neurons.shape
+        for d in range(input_ensemble.neurons.shape):
             indices.append((0, d))
         return indices
 

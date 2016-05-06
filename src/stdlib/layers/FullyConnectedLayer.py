@@ -34,13 +34,12 @@ def FullyConnectedLayer(name, net, input_ensemble, size):
 
     neurons = np.empty(size, dtype = object)
 
-    for i in range(size） :
+    for i in range(size):
         neurons[i] = WeightedNeuron(weights[:, i], gd_weights[:, i], bias[:, i], gd_bias[:, i])
 
-    ens = Ensemble(net, name, neurons, [Param(name, "weights", 1.0, 1.0),\ 
-                                        Param(name, "bias", 2,0, 0.0)]) 
+    ens = Ensemble(net, name, neurons, [Param(name, "weights", 1.0, 1.0), Param(name, "bias", 2,0, 0.0)]) 
 
-    def mapping:
+    def mapping():
         indices = []
         for d in input_ensemble.neuron.shape :
             indices.append((0, d))

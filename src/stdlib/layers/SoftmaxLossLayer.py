@@ -8,7 +8,9 @@ class SoftmaxLossNeuron:
         self.gd_value = gd_value
 
 class SoftmaxLossEnsemble:
-    def __init__(self, name, num_inputs, neurons = np.empty(0, dtype = object), connections = [], phase = Train, net_subgroup = 1):
+    #def __init__(self, name, num_inputs, neurons = np.empty(0, dtype = object), connections = [], phase = Train, net_subgroup = 1):
+    def __init__(self, name, num_inputs, neurons = np.empty(0, dtype = object),
+            connections = [], phase = 'you can you up', net_subgroup = 1):
         self.name = name
         self.neurons = neurons
         self.connections = connections
@@ -30,9 +32,9 @@ def SoftmaxLossLayer(name, net, input_ensemble, label_ensemble):
     num_inputs = len(input_ensemble.neurons)
     softmax = SoftmaxLossEnsemble(name, num_inputs)
     net.ensembles.append(softmax)
-    def mapping1:
+    def mapping1():
         return [(0,num_inputs)]
-    def mapping2:
+    def mapping2():
         return [(0,0)]
     add_connections(net, input_ensemble, softmax, mapping1)
     add_connections(net, input_ensemble, softmax, mapping2)
@@ -46,7 +48,7 @@ def forward(loss, prob, input, label):
             maxval = max(maxval, input[i][n])
         for i in range(input.shape[0]) :
             prob[i][n] = math.exp(input[i][n] - maxval)
-        the_sum = 0.0
+            the_sum = 0.0
         for i in range(input.shape[0]) :
             the_sum += prob[i][n]
         for i in range(input.shape[0]) :
@@ -54,16 +56,16 @@ def forward(loss, prob, input, label):
 
     for n in range(input.shape[1]) :
         #rounding DIFFERENCE
-        label_value = int(round(label[0][n])
+        label_value = int(round(label[0][n]))
         loss[0] -= math.log(max(prob[label_value][n], sys.float_info.epsilon))
-    loss[0] /= input.shape[1]
+        loss[0] /= input.shape[1]
     return 0
 
 def backward(prob, diff, label):
     for i in range(diff.size) :
         diff[i] = prob[i]
     for n in range(diff.shape[1]) :
-        label_value = int(round(label[0][n])
+        label_value = int(round(label[0][n]))
         diff[label_value][n] -= 1
     for i in range(diff.size) :
         diff[i] /= diff.shape[1]
