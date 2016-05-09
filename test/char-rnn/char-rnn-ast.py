@@ -1,26 +1,10 @@
-import math
-import numpy as np
-
-def load_data():
-    vocab = {}
-    filename = open('input.txt', 'r')
-    words = list(filename.read())
-    dataset = np.zeros(len(words), dtype = int)
-    for i in range(len(words)):
-        char = words[i]
-        if not vocab.has_key(char):
-            vocab[char] = len(vocab) + 1
-        dataset[i] = vocab[char]
-    print "corpus lenght : " + len(words)
-    print "vocab size    : " + len(vocab)
-    filename.close()
-    return dataset, words, vocab
 
 def main():
-    dataset, words, vocab = load_data()
+    #dataset, words, vocab = load_data(sys.args[1])
     
     n_units = 128
-    n_vocab = len(vocab)
+    #n_vocab = len(vocab)
+    n_vocab = 128
     batch_size = 50
     bprop_len = 50
 
@@ -33,9 +17,9 @@ def main():
     fc1 = InnerProductLayer('fc1', net, gru2, n_vocab)
     loss = SoftmaxLossLayer('loss', net, fc1, label)
 
-    whole_len = dataset.size
-    jump = div(whole_len, batch_size)
-    n_epochs = 100
+    #whole_len = dataset.size
+    #jump = whole_len/batch_size
+    #n_epochs = 100
 
     params = SolverParameters(
             LRPolicy.Inv(0.01, 0.0001, 0.75), \
@@ -43,9 +27,6 @@ def main():
             10000, 0.0005, 1000)
 
     sgd = SGD(params)
-    solve(sgd, net)
+    solve(sgd, net) 
 
-if __name__ == "__main__":
-    main()
-    
 

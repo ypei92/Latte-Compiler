@@ -3,8 +3,8 @@ import numpy as np
 
 def load_data():
     vocab = {}
-    f = open('input.txt', 'r')
-    words = list(f.read())
+    filename = open('input.txt', 'r')
+    words = list(filename.read())
     dataset = np.zeros(len(words), dtype = int)
     for i in range(len(words)):
         char = words[i]
@@ -13,7 +13,9 @@ def load_data():
         dataset[i] = vocab[char]
     print "corpus lenght : " + len(words)
     print "vocab size    : " + len(vocab)
+    filename.close()
     return dataset, words, vocab
+
 
 def main():
     dataset, words, vocab = load_data()
