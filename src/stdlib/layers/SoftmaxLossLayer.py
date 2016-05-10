@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import math
-import numpy as np
 
 class SoftmaxLossNeuron:
     def __init__(self, value = 0.0, gd_value = 0.0):

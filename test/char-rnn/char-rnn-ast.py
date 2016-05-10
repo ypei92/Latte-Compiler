@@ -1,7 +1,6 @@
-
 def main():
     #dataset, words, vocab = load_data(sys.args[1])
-    
+
     n_units = 128
     #n_vocab = len(vocab)
     n_vocab = 128
