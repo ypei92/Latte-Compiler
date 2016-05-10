@@ -7,7 +7,7 @@ class Neuron:
         self.inputs = inputs 
 	self.gd_inputs = gd_inputs 
 
-class DataNeuron(Neuron):
+class DataNeuron:
     def __init__(self, value = 0, gd_value = 0):
         self.value = value
         self.gd_value = gd_value
