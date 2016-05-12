@@ -580,6 +580,19 @@ class EnsembleNode:
         self.backward_ast = None #body ast
         self.forward_actuals_list = []
         self.backward_actuals_list = []
+        self.params = []
+
+class ParamNode:
+    def __init__(self, en_name, attr, learning_rate, regu_coef):
+        self.name = en_name + "_" + attr
+        self.gradient_name = en_name + "_gd_" + attr
+        self.hist_name = en_name + "_" + attr + "_hist"
+        self.learning_rate = learning_rate
+        self.regu_coef = regu_coef
+        self.value = None
+        self.gd_value = None
+        self.hist = None
+
 
 class FieldsNode:
     def __init__(self):
@@ -601,6 +614,8 @@ class SourceNode:
         self.is_dim_fixed = False
         self.is_one_to_one = False
         self.copy = true
+        self.size = 0
+        self.shape = None
 
 if __name__ == "__main__":
     main()

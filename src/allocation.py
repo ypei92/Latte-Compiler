@@ -42,11 +42,17 @@ for ensemble in net.ensemble_list:
                 if src_buff in net.buffer_list:
                     if src.is_dim_fixed:
                         src.copy = False
-                        buff = Buffer(False, net.buffer_list[src], True)
-                        buff.shape = ()
+                        buff = Buffer(False, net.buffer_list[src_buff], True)
+                        buff.shape = (src.size, net.batch_size)
+                        buff.name = key
+                        net.buffer_list[buff.name] = buff
                     elif src.is_one_to_one:
-                        pass
+                        src.copy = False
+                        buff = Buffer(False, net.buffer_list[src_buff])
+                        buff.name = key
+                        net.buffer_list[buff.name] = buff
                     else:
+                        #TODO
                         pass
                 else:
                     buff = Buffer()
