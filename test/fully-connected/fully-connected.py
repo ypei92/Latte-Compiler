@@ -1,11 +1,11 @@
 def main():
-	batch_size = 50
+	batch_size = 1
 
 	datafile = '../test/fully-connected/datafile.txt'
 	labelfile = '../test/fully-connected/labelfile.txt'
 	
 	net = Net(batch_size)
-	shape = (25,)
+	shape = (250,)
 
 
 	data = MemoryDataLayer(net, "data", shape, batch_size, datafile)

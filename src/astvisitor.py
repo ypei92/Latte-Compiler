@@ -14,20 +14,16 @@ import numpy as np
 
 TopfileSymbolTable = {}
 LayerDict = {}
-LayerList = []
+LayerNameList = []
+LayerTypeList = []
 EnsembleDict = {}
 NeuronDict = {}
 
 forward_func_ast = []
 backward_func_ast = []
 mapping_func_ast = []
-layer_func_ast = []
-num_layer = 0
 
-LayerCalling = []
-cur_parsing_state = 0
 
-TotalExpr = 0
 
 def initLayerDict():
     stdpath = "./stdlib/layers"
@@ -133,7 +129,7 @@ class ast_visitor(ast.NodeVisitor):
             if self.state == 0:
                 TopfileSymbolTable[targetname] = valuelist
                 if 'Layer' in st:
-                    LayerList.append(targetname)
+                    LayerNameList.append(targetname)
             return st
         elif isinstance(node, ast.AugAssign):
             chlist = ast_visitor.get_chlist(self, node)
@@ -545,13 +541,14 @@ class NetNode:
         print 'BatchSize = ', self.batch_size
         print 'ensemble_list = '
         for ens in self.ensemble_list:
-            print '    ', ens.ensemble_name
+            print ' ', ens.ensemble_type, ' ', ens.neuron_type, ' ', ens.neuron_size
 
 class EnsembleNode:
     def __init__(self, name):
         self.ensemble_name = name
+        self.ensemble_type = ''
         self.ensemble_fields_list = []
-        self.ensemble_actuals_list = []
+        #self.ensemble_actuals_list = []
         self.neuron_size = 0
         self.neuron_type = ""
         self.neuron_fields_list = []
@@ -575,10 +572,10 @@ class ParamNode:
 
 
 class FieldsNode:
-    def __init__(self):
-        self.name = ""
-        self.type = ""
-        self.init = ""
+    def __init__(self, name, typein, init = ''):
+        self.name = name
+        self.type = typein
+        self.init = init
         self.size = 1
 
 class ActualNode:
@@ -587,13 +584,14 @@ class ActualNode:
         self.type = ""
         #self.value
 
+
 class SourceNode:
-    def __init__(self, ens):
+    def __init__(self, ens, mapping, copy):
         self.source_ensemble = ens
         self.mapping_ast = None
-        self.is_dim_fixed = False
+        self.is_dim_fixed = True
         self.is_one_to_one = False
-        self.copy = true
+        self.copy = copy
         self.size = 0
         self.shape = None
 
@@ -605,10 +603,114 @@ def initStructure():
             net.batch_size = searchNum(value[2][0])
             break
 
-    for key in LayerList:
+    for key in LayerNameList:
         value = TopfileSymbolTable[key]
         net.ensemble_list.append(EnsembleNode(key))
 
+    counter = 0
+    for key in LayerNameList:
+        value = TopfileSymbolTable[key]
+        if value[1] == 'MemoryDataLayer':
+            net.ensemble_list[counter].ensemble_type += 'DataEnsemble'
+            net.ensemble_list[counter].neuron_type += 'DataNeuron'
+        elif value[1] == 'SoftmaxLossLayer':
+            net.ensemble_list[counter].ensemble_type += 'NormalizationEnsemble'
+            net.ensemble_list[counter].neuron_type += 'SoftmaxLossNeuron'
+        else:
+            net.ensemble_list[counter].ensemble_type += 'Ensemble'
+            net.ensemble_list[counter].neuron_type += 'WeightedNeuron'
+        counter += 1
+
+    counter = 0
+    for ens in net.ensemble_list:
+        if counter == 0:
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'data'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
+            ens.ensemble_fields_list.append(FieldsNode('value', 'Array', 'load'))
+            ens.ensemble_fields_list.append(FieldsNode('connection', 'List', 'Empty'))
+            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'TrainTest'))
+            ens.ensemble_fields_list.append(FieldsNode('net_subgroup', 'Num', '1'))
+            ens.neuron_size = eval(TopfileSymbolTable['shape'][1][0])
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+            #forward_ast
+            #backward_ast
+            #forward_actual
+            #backward_actual
+        elif counter == 1:
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'label'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
+            ens.ensemble_fields_list.append(FieldsNode('value', 'Array', 'load'))
+            ens.ensemble_fields_list.append(FieldsNode('connection', 'List', 'Empty'))
+            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'TrainTest'))
+            ens.ensemble_fields_list.append(FieldsNode('net_subgroup', 'Num', '1'))
+            ens.neuron_size = eval(TopfileSymbolTable['shape'][1][0])
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+            #forward_ast
+            #backward_ast
+            #forward_actual
+            #backward_actual
+        elif counter == 2:
+            ens.ensemble_fields_list.append(FieldsNode('net', 'Var', 'net'))
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'fc1'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Assign'))
+            ens.ensemble_fields_list.append(FieldsNode('params', 'Assign'))
+            ens.ensemble_fields_list.append(FieldsNode('batch_size', 'Num', '1'))
+            ens.neuron_size = 100
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0'))
+            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier'))
+            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros'))
+            ens.neuron_fields_list.append(FieldsNode('bias', 'Array', 'zeros'))
+            ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
+            #forward_ast
+            #backward_ast
+            #forward_actual
+            #backward_actual
+            ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
+            ens.params.append(ParamNode('fc1', 'weights', 2.0 , 0.0))
+            ens.source_list.append(SourceNode(net.ensemble_list[0], [0, eval(TopfileSymbolTable['shape'][1][0]) - 1], False))
+        elif counter == 3 :
+            ens.ensemble_fields_list.append(FieldsNode('net', 'Var', 'net'))
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'fc2'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Assign'))
+            ens.ensemble_fields_list.append(FieldsNode('params', 'Assign'))
+            ens.ensemble_fields_list.append(FieldsNode('batch_size', 'Num', '1'))
+            ens.neuron_size = 10
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0'))
+            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier'))
+            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros'))
+            ens.neuron_fields_list.append(FieldsNode('bias', 'Array', 'zeros'))
+            ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
+            #forward_ast
+            #backward_ast
+            #forward_actual
+            #backward_actual
+            ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
+            ens.params.append(ParamNode('fc1', 'weights', 2.0 , 0.0))
+            ens.source_list.append(SourceNode(net.ensemble_list[2], [0, 99], False))
+        elif counter == 4 :
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'loss'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
+            ens.ensemble_fields_list.append(FieldsNode('connection', 'Empty'))
+            ens.ensemble_fields_list.append(FieldsNode('num_inputs', 'Num', '10'))
+            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'Train'))
+            ens.neuron_size = 1
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+            #forward_ast
+            #backward_ast
+            #forward_actual
+            #backward_actual
+            ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False))
+            ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False))
+        counter += 1        
 
 def searchNum(string):
     value = TopfileSymbolTable[string]
