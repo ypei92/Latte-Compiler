@@ -10,6 +10,7 @@ from network import *
 from tools import *
 import ast
 import numpy as np
+import sets as Set
 
 
 TopfileSymbolTable = {}
@@ -569,6 +570,8 @@ class ast_visitor(ast.NodeVisitor):
     # def generic_visit(self, node):
     #     #print type(node).__name__
     #     ast.NodeVisitor.generic_visit(self, node)
+
+
 def initStructure():
     for key in TopfileSymbolTable.keys():
         value = TopfileSymbolTable[key]
@@ -666,15 +669,25 @@ def initStructure():
             ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False))
         counter += 1
 
+class Task:
+    def __init__(self, func, arg_list):
+        self.func = func
+        self.arg_list = arg_list
 
 class NetNode:
     def __init__(self):
         self.name = ''
         self.ensemble_list = []
         self.buffer_list = {}
-        self.task_list = []
-        self.batch_size = 0
-
+        self.batch_size = 1
+        self.forward_task_list = []
+        self.backward_task_list = []
+        self.batch_size = batch_size
+        # self.foward_body = {"Train":[], "Test":[]}
+        # self.foward_args = {"Train":Set(), "Test":Set()}
+        # self.backward_body = {"Train":[], "Test":[]}
+        # self.backward_args = {"Train":Set(), "Test":Set()} 
+        
     def printNetNode(self):
         print 'NetName = ', self.name
         print 'BatchSize = ', self.batch_size
@@ -723,7 +736,6 @@ class ActualNode:
         self.type = ""
         #self.value
 
-
 class SourceNode:
     def __init__(self, ens, mapping, copy):
         self.source_ensemble = ens
@@ -733,7 +745,6 @@ class SourceNode:
         self.copy = copy
         self.size = 0
         self.shape = None
-
 
 
 def searchNum(string):

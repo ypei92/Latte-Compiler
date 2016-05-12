@@ -33,6 +33,16 @@ for ensemble in net.ensemble_list:
             net.buffer_list[buff.name] = buff
 
 for ensemble in net.ensemble_list:
+    for param in ensemble.params:
+        param.value = net.buffer_list[param.name]
+        param.gradient = net.buffer_list[param.gradient_name]
+        buff = Buffer()
+        buff.init_func = "zeros"
+        buff.shape = param.value.shape
+        buff.name = param.hist_name
+        net.buffer_list[buff.name] = buff
+
+for ensemble in net.ensemble_list:
     for field in ensemble.neuron_field_list:
         if field.name == "inputs" || field.name == "gd_inputs":
             attr = "value" if field.name == "inputs" else "gd_value"
@@ -60,3 +70,12 @@ for ensemble in net.ensemble_list:
                     buff.shape = (0,)
                     buff.name = key
                     net.buffer_list[buff.name] = buff
+
+for ensemble in net.ensemble_list:
+    if ensemble.type == "Data":
+        net.forward_task_list.append(Task("forward", forward_actuals_list))
+    elif ensemble.type == "Ensemble":
+        pass
+    else:
+        #Normalization
+        pass
