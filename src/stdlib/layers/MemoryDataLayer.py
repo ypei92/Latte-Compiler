@@ -13,8 +13,9 @@ class MemoryDataEnsemble():
         self.batch_size = batch_size
         self.net_subgroup = 1
 
-    def forward(ens, data):
-        data = ens.value
+    def forward(value, data):
+        for i in range(0, length(value)):
+            data[i] = value[i]
 
     def backward():
         return
@@ -34,5 +35,5 @@ def MemoryDataLayer(net, name, shape, batch_size, filename, phase = 'TrainTest')
     value = load(shape_array, filename)
     ens = MemoryDataEnsemble(name, data_neurons, value, phase, batch_size)
     add_ensemble(net, ens)
-    return ens, value
+    return ens
 

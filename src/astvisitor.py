@@ -21,8 +21,10 @@ NeuronDict = {}
 
 forward_func_ast = []
 backward_func_ast = []
-mapping_func_ast = []
+forward_func_actuals =[]
+backward_func_actuals =[]
 
+mapping_func_ast = []
 
 
 def initLayerDict():
@@ -54,57 +56,90 @@ class ast_visitor(ast.NodeVisitor):
     def visit_Module(self, node):
         print '0 Module: '
         st = ''
-        for ch in ast.iter_child_nodes(node):
-            if isinstance(ch, ast.FunctionDef):
-                if ch.name == 'forward':
-                    print '!This forward'
-                    forward_func_ast.append(ch)
-                elif ch.name == 'backward':
-                    print '!This backward'
-                    backward_func_ast.append(ch)
-                elif 'mapping' in ch.name:
-                    print '!This mapping'
-                    mapping_func_ast.append(ch)
-                elif 'Layer' in ch.name:
-                    print '!This Layer: ', ch.name
-                    layer_func_ast.append(ch)         
-                else:
+        if self.state == 0:
+            for ch in ast.iter_child_nodes(node):
+                if isinstance(ch, ast.FunctionDef):
+                    if ch.name == 'forward':
+                        print '!This forward'
+                        forward_func_ast.append(ch)
+                    elif ch.name == 'backward':
+                        print '!This backward'
+                        backward_func_ast.append(ch)
+                    elif 'mapping' in ch.name:
+                        print '!This mapping'
+                        mapping_func_ast.append(ch)
+                    elif 'Layer' in ch.name:
+                        print '!This Layer: ', ch.name
+                        # layer_func_ast.append(ch)         
+                    else:
+                        self.indent += 4
+                        chlist = ast_visitor.get_chlist(self, ch)
+                        print 'FunctionDef: Name = ', ch.name
+                        actual, actuallist = ast_visitor.getActuals(self, chlist[0])
+                        st += 'int ' + ch.name + actual + ' {\n'
+                        for chch in chlist[1:]:
+                            #print chch
+                            st += ast_visitor.getStatement(self, chch)
+                            #ast_visitor.getStatement(self, chch)
+                            st += '\n'
+                            # ast_visitor.self.get_indent(self, indent)
+                        st += '}\n'
+                        self.indent -= 4
+                elif isinstance(ch, ast.Assign):
+                    print 'Assign: getExpr'
+                    ast_visitor.getStatement(self, ch)
+                elif isinstance(ch, ast.ClassDef):
+                    print 'ClassDef: ' + ch.name
                     self.indent += 4
                     chlist = ast_visitor.get_chlist(self, ch)
-                    print 'FunctionDef: Name = ', ch.name
-                    actual = ast_visitor.getActuals(self, chlist[0])
-                    st += 'int ' + ch.name + actual + ' {\n'
-                    for chch in chlist[1:]:
-                        #print chch
-                        st += ast_visitor.getStatement(self, chch)
-                        #ast_visitor.getStatement(self, chch)
-                        st += '\n'
-                        # ast_visitor.self.get_indent(self, indent)
+                    st += 'class ' + ch.name
+                    if isinstance(chlist[0], ast.Name):
+                        print '    Based on: ', chlist[0].id
+                        st += ': ' + chlist[0].id + ' {\n'
+                        for chch in chlist[1:]:
+                            st += ast_visitor.getStatement(self, chch)
+                    else:
+                        st += ' {\n'
+                        for chch in chlist:
+                            st += ast_visitor.getStatement(self, chch)
                     st += '}\n'
                     self.indent -= 4
-            elif isinstance(ch, ast.Assign):
-                print 'Assign: getExpr'
-                ast_visitor.getStatement(self, ch)
-            elif isinstance(ch, ast.ClassDef):
-                print 'ClassDef: ' + ch.name
-                self.indent += 4
-                chlist = ast_visitor.get_chlist(self, ch)
-                st += 'class ' + ch.name
-                if isinstance(chlist[0], ast.Name):
-                    print '    Based on: ', chlist[0].id
-                    st += ': ' + chlist[0].id + ' {\n'
-                    for chch in chlist[1:]:
-                        st += ast_visitor.getStatement(self, chch)
                 else:
-                    st += ' {\n'
+                    print '00don\'t care'
+                    ast.NodeVisitor.generic_visit(self, ch)
+            print st
+
+        elif self.state == 1:
+            for ch in ast.iter_child_nodes(node):
+                if isinstance(ch , ast.ClassDef):
+                    print 'ClassDef: ' + ch.name
+                    chlist = ast_visitor.get_chlist(self, ch)
                     for chch in chlist:
-                        st += ast_visitor.getStatement(self, chch)
-                st += '}\n'
-                self.indent -= 4
-            else:
-                print '00don\'t care'
-                ast.NodeVisitor.generic_visit(self, ch)
-        print st
+                        st = ast_visitor.getFunctionDef(self, chch)
+                        if st == 'forward':
+                            forward_func_ast.append(chch)
+                            chlist0 = ast_visitor.get_chlist(self, chch)
+                            st0 , actuallist = ast_visitor.getActuals(self, chlist0[0])
+                            forward_func_actuals.append(actuallist)
+                        elif st == 'backward':
+                            backward_func_ast.append(chch)
+                            chlist0 = ast_visitor.get_chlist(self, chch)
+                            st0 , actuallist = ast_visitor.getActuals(self, chlist0[0])
+                            backward_func_actuals.append(actuallist)
+                elif isinstance(ch, ast.FunctionDef):
+                    #print ch.name
+                    if ch.name == 'forward':
+                        forward_func_ast.append(ch)
+                        chlist0 = ast_visitor.get_chlist(self, ch)
+                        st0 , actuallist = ast_visitor.getActuals(self, chlist0[0])
+                        forward_func_actuals.append(actuallist)
+                    elif ch.name == 'backward':
+                        backward_func_ast.append(ch)
+                        chlist0 = ast_visitor.get_chlist(self, ch)
+                        st0 , actuallist = ast_visitor.getActuals(self, chlist0[0])
+                        backward_func_actuals.append(actuallist)
+
+
 
     def get_chlist(self, node):
         chlist = []
@@ -171,7 +206,7 @@ class ast_visitor(ast.NodeVisitor):
                 mapping_func_ast.append(node)
             elif 'Layer' in node.name:
                 print '!This Layer: ', node.name
-                layer_func_ast.append(node)         
+                # layer_func_ast.append(node)         
             else:
                 chlist = ast_visitor.get_chlist(self, node)
                 print 'FunctionDef: Name = ', node.name
@@ -208,7 +243,7 @@ class ast_visitor(ast.NodeVisitor):
     def getActuals(self, node):
         stractuallist = []
         strdefaultlist = []
-        # actuallist = []
+        actuallist = []
         # defaultlist = []
         st = '('
         print '    printing Actuals:'
@@ -217,12 +252,15 @@ class ast_visitor(ast.NodeVisitor):
             if isinstance(ch, ast.Name):
                 print '        ActName:', ch.id
                 stractuallist.append(ch.id)
+                actuallist.append(ch.id)
             elif isinstance(ch, ast.Num):
                 print '        ActDefNum:', ch.n
                 strdefaultlist.append(str(ch.n))
+                actuallist.append(ch.n)
             elif isinstance(ch, ast.Str):
-                print '        ActDefStr:', ch,stddir
+                print '        ActDefStr:', ch.s
                 strdefaultlist.append(ch.s)
+                actuallist.append(ch.s)
             else:
                 print 'Unknown args'
         print
@@ -231,9 +269,9 @@ class ast_visitor(ast.NodeVisitor):
         for tmpst in stractuallist:
             st += tmpst + ', '
         if st[-1] == '(' :
-            return '()'
+            return '()', []
         else:
-            return st[0:-2] + ')'
+            return st[0:-2] + ')' , actuallist
 
     def getAssignTarget(self, node):
         #print '    AssignTarget:', node
@@ -523,9 +561,110 @@ class ast_visitor(ast.NodeVisitor):
             else:
                 "Unknown type in getIndex"
 
+    def getFunctionDef(self, node):
+        if isinstance(node, ast.FunctionDef):
+            print node.name
+            return node.name
+
     # def generic_visit(self, node):
     #     #print type(node).__name__
     #     ast.NodeVisitor.generic_visit(self, node)
+def initStructure():
+    for key in TopfileSymbolTable.keys():
+        value = TopfileSymbolTable[key]
+        if value[0] == 'Call' and value[1] == 'Net':
+            net.name = key
+            net.batch_size = searchNum(value[2][0])
+            break
+
+    for key in LayerNameList:
+        value = TopfileSymbolTable[key]
+        net.ensemble_list.append(EnsembleNode(value[1]))
+
+    counter = 0
+    for key in LayerNameList:
+        value = TopfileSymbolTable[key]
+        if value[1] == 'MemoryDataLayer':
+            net.ensemble_list[counter].ensemble_type += 'DataEnsemble'
+            net.ensemble_list[counter].neuron_type += 'DataNeuron'
+        elif value[1] == 'SoftmaxLossLayer':
+            net.ensemble_list[counter].ensemble_type += 'NormalizationEnsemble'
+            net.ensemble_list[counter].neuron_type += 'SoftmaxLossNeuron'
+        else:
+            net.ensemble_list[counter].ensemble_type += 'Ensemble'
+            net.ensemble_list[counter].neuron_type += 'WeightedNeuron'
+        counter += 1
+
+    counter = 0
+    for ens in net.ensemble_list:
+        if counter == 0:
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'data'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
+            ens.ensemble_fields_list.append(FieldsNode('value', 'Array', 'load'))
+            ens.ensemble_fields_list.append(FieldsNode('connection', 'List', 'Empty'))
+            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'TrainTest'))
+            ens.ensemble_fields_list.append(FieldsNode('net_subgroup', 'Num', '1'))
+            ens.neuron_size = eval(TopfileSymbolTable['shape'][1][0])
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+        elif counter == 1:
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'label'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
+            ens.ensemble_fields_list.append(FieldsNode('value', 'Array', 'load'))
+            ens.ensemble_fields_list.append(FieldsNode('connection', 'List', 'Empty'))
+            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'TrainTest'))
+            ens.ensemble_fields_list.append(FieldsNode('net_subgroup', 'Num', '1'))
+            ens.neuron_size = eval(TopfileSymbolTable['shape'][1][0])
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+        elif counter == 2:
+            ens.ensemble_fields_list.append(FieldsNode('net', 'Var', 'net'))
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'fc1'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Assign'))
+            ens.ensemble_fields_list.append(FieldsNode('params', 'Assign'))
+            ens.ensemble_fields_list.append(FieldsNode('batch_size', 'Num', '1'))
+            ens.neuron_size = 100
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0'))
+            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier'))
+            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros'))
+            ens.neuron_fields_list.append(FieldsNode('bias', 'Array', 'zeros'))
+            ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
+            ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
+            ens.params.append(ParamNode('fc1', 'weights', 2.0 , 0.0))
+            ens.source_list.append(SourceNode(net.ensemble_list[0], [0, eval(TopfileSymbolTable['shape'][1][0]) - 1], False))
+        elif counter == 3 :
+            ens.ensemble_fields_list.append(FieldsNode('net', 'Var', 'net'))
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'fc2'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Assign'))
+            ens.ensemble_fields_list.append(FieldsNode('params', 'Assign'))
+            ens.ensemble_fields_list.append(FieldsNode('batch_size', 'Num', '1'))
+            ens.neuron_size = 10
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0'))
+            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier'))
+            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros'))
+            ens.neuron_fields_list.append(FieldsNode('bias', 'Array', 'zeros'))
+            ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
+            ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
+            ens.params.append(ParamNode('fc1', 'weights', 2.0 , 0.0))
+            ens.source_list.append(SourceNode(net.ensemble_list[2], [0, 99], False))
+        elif counter == 4 :
+            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'loss'))
+            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
+            ens.ensemble_fields_list.append(FieldsNode('connection', 'Empty'))
+            ens.ensemble_fields_list.append(FieldsNode('num_inputs', 'Num', '10'))
+            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'Train'))
+            ens.neuron_size = 1
+            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
+            ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False))
+            ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False))
+        counter += 1
 
 
 class NetNode:
@@ -595,122 +734,7 @@ class SourceNode:
         self.size = 0
         self.shape = None
 
-def initStructure():
-    for key in TopfileSymbolTable.keys():
-        value = TopfileSymbolTable[key]
-        if value[0] == 'Call' and value[1] == 'Net':
-            net.name = key
-            net.batch_size = searchNum(value[2][0])
-            break
 
-    for key in LayerNameList:
-        value = TopfileSymbolTable[key]
-        net.ensemble_list.append(EnsembleNode(key))
-
-    counter = 0
-    for key in LayerNameList:
-        value = TopfileSymbolTable[key]
-        if value[1] == 'MemoryDataLayer':
-            net.ensemble_list[counter].ensemble_type += 'DataEnsemble'
-            net.ensemble_list[counter].neuron_type += 'DataNeuron'
-        elif value[1] == 'SoftmaxLossLayer':
-            net.ensemble_list[counter].ensemble_type += 'NormalizationEnsemble'
-            net.ensemble_list[counter].neuron_type += 'SoftmaxLossNeuron'
-        else:
-            net.ensemble_list[counter].ensemble_type += 'Ensemble'
-            net.ensemble_list[counter].neuron_type += 'WeightedNeuron'
-        counter += 1
-
-    counter = 0
-    for ens in net.ensemble_list:
-        if counter == 0:
-            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'data'))
-            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
-            ens.ensemble_fields_list.append(FieldsNode('value', 'Array', 'load'))
-            ens.ensemble_fields_list.append(FieldsNode('connection', 'List', 'Empty'))
-            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'TrainTest'))
-            ens.ensemble_fields_list.append(FieldsNode('net_subgroup', 'Num', '1'))
-            ens.neuron_size = eval(TopfileSymbolTable['shape'][1][0])
-            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            #forward_ast
-            #backward_ast
-            #forward_actual
-            #backward_actual
-        elif counter == 1:
-            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'label'))
-            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
-            ens.ensemble_fields_list.append(FieldsNode('value', 'Array', 'load'))
-            ens.ensemble_fields_list.append(FieldsNode('connection', 'List', 'Empty'))
-            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'TrainTest'))
-            ens.ensemble_fields_list.append(FieldsNode('net_subgroup', 'Num', '1'))
-            ens.neuron_size = eval(TopfileSymbolTable['shape'][1][0])
-            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            #forward_ast
-            #backward_ast
-            #forward_actual
-            #backward_actual
-        elif counter == 2:
-            ens.ensemble_fields_list.append(FieldsNode('net', 'Var', 'net'))
-            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'fc1'))
-            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Assign'))
-            ens.ensemble_fields_list.append(FieldsNode('params', 'Assign'))
-            ens.ensemble_fields_list.append(FieldsNode('batch_size', 'Num', '1'))
-            ens.neuron_size = 100
-            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0'))
-            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0'))
-            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier'))
-            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros'))
-            ens.neuron_fields_list.append(FieldsNode('bias', 'Array', 'zeros'))
-            ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
-            #forward_ast
-            #backward_ast
-            #forward_actual
-            #backward_actual
-            ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
-            ens.params.append(ParamNode('fc1', 'weights', 2.0 , 0.0))
-            ens.source_list.append(SourceNode(net.ensemble_list[0], [0, eval(TopfileSymbolTable['shape'][1][0]) - 1], False))
-        elif counter == 3 :
-            ens.ensemble_fields_list.append(FieldsNode('net', 'Var', 'net'))
-            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'fc2'))
-            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Assign'))
-            ens.ensemble_fields_list.append(FieldsNode('params', 'Assign'))
-            ens.ensemble_fields_list.append(FieldsNode('batch_size', 'Num', '1'))
-            ens.neuron_size = 10
-            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0'))
-            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0'))
-            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier'))
-            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros'))
-            ens.neuron_fields_list.append(FieldsNode('bias', 'Array', 'zeros'))
-            ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
-            #forward_ast
-            #backward_ast
-            #forward_actual
-            #backward_actual
-            ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
-            ens.params.append(ParamNode('fc1', 'weights', 2.0 , 0.0))
-            ens.source_list.append(SourceNode(net.ensemble_list[2], [0, 99], False))
-        elif counter == 4 :
-            ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'loss'))
-            ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
-            ens.ensemble_fields_list.append(FieldsNode('connection', 'Empty'))
-            ens.ensemble_fields_list.append(FieldsNode('num_inputs', 'Num', '10'))
-            ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'Train'))
-            ens.neuron_size = 1
-            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            #forward_ast
-            #backward_ast
-            #forward_actual
-            #backward_actual
-            ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False))
-            ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False))
-        counter += 1        
 
 def searchNum(string):
     value = TopfileSymbolTable[string]
@@ -731,6 +755,7 @@ def main():
     print('=' * 50)
     ftop = open(topfile)
     top_expr = ftop.read()
+    ftop.close()
     top_ast = ast.parse(top_expr)
     ast_print(topfile, top_ast) 
 
@@ -745,9 +770,23 @@ def main():
     initStructure()
     net.printNetNode()
 
-    # x.state = 1
-    # for layer in layer_func_ast:
-    #     x.visit(layer)
+    x.state = 1 #Finding Forward and Backward
+    for ens in net.ensemble_list:
+        ens_type = ens.ensemble_name
+        filepath = LayerDict[ens_type]
+        f = open(filepath)
+        fcontent = f.read()
+        layer_ast = ast.parse(fcontent)
+        x.visit(layer_ast)
+        f.close()
+
+    counter = 0
+    for ens in net.ensemble_list:
+        ens.forward_ast = forward_func_ast[counter]
+        ens.backward_ast = backward_func_ast[counter]
+        ens.forward_actuals_list = forward_func_actuals[counter]
+        ens.backward_actuals_list = backward_func_actuals[counter]
+        counter += 1
 
 '''
     x.state = 2
