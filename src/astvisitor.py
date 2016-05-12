@@ -1,4 +1,4 @@
-import sys, os                                                                      
+import sys, os, pprint                                                                 
 sys.path.append('./stdlib')
 sys.path.append('./stdlib/layers')
 sys.path.append('../userdef/')
@@ -12,7 +12,6 @@ import ast
 import numpy as np
 
 TopfileSymbolTable = {}
-TypeSymbolTable = {}
 LayerDict = {}
 EnsembleDict = {}
 NeuronDict = {}
@@ -25,6 +24,8 @@ num_layer = 0
 
 LayerCalling = []
 cur_parsing_state = 0
+
+TotalExpr = 0
 
 def initLayerDict():
     stdpath = "./stdlib/layers"
@@ -53,11 +54,15 @@ def main():
     x = ast_visitor(0)
     x.visit(top_ast)
 
-'''
-    x.state = 1
-    for layer in layer_func_ast:
-        x.visit(layer)
+    #print TopfileSymbolTable
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(TopfileSymbolTable)
 
+    # x.state = 1
+    # for layer in layer_func_ast:
+    #     x.visit(layer)
+
+'''
     x.state = 2
     #for i 
 
@@ -70,12 +75,12 @@ class ast_visitor(ast.NodeVisitor):
         #Parsing top    state = 0
         #Parsing layer  state = 1
         #Parsing forward or backward state = 2
-        #self.indent = 0
         self.state = state
+        self.indent = 0
 
-    def get_indent(self, indent):
+    def get_indent(self):
         st = ''
-        for i in range(indent):
+        for i in range(self.indent):
             st += ' '
         return st
 
@@ -97,7 +102,7 @@ class ast_visitor(ast.NodeVisitor):
                     print '!This Layer: ', ch.name
                     layer_func_ast.append(ch)         
                 else:
-                    indent = 4
+                    self.indent += 4
                     chlist = ast_visitor.get_chlist(self, ch)
                     print 'FunctionDef: Name = ', ch.name
                     actual = ast_visitor.getActuals(self, chlist[0])
@@ -107,13 +112,15 @@ class ast_visitor(ast.NodeVisitor):
                         st += ast_visitor.getStatement(self, chch)
                         #ast_visitor.getStatement(self, chch)
                         st += '\n'
-                        # ast_visitor.get_indent(self, indent)
+                        # ast_visitor.self.get_indent(self, indent)
                     st += '}\n'
+                    self.indent -= 4
             elif isinstance(ch, ast.Assign):
                 print 'Assign: getExpr'
                 ast_visitor.getStatement(self, ch)
             elif isinstance(ch, ast.ClassDef):
                 print 'ClassDef: ' + ch.name
+                self.indent += 4
                 chlist = ast_visitor.get_chlist(self, ch)
                 st += 'class ' + ch.name
                 if isinstance(chlist[0], ast.Name):
@@ -126,6 +133,7 @@ class ast_visitor(ast.NodeVisitor):
                     for chch in chlist:
                         st += ast_visitor.getStatement(self, chch)
                 st += '}\n'
+                self.indent -= 4
             else:
                 print '00don\'t care'
                 ast.NodeVisitor.generic_visit(self, ch)
@@ -148,34 +156,39 @@ class ast_visitor(ast.NodeVisitor):
         if isinstance(node, ast.Assign):
             chlist = ast_visitor.get_chlist(self, node)
             print 'Assign: childs = ', len(chlist) 
-            targetstr = ast_visitor.getAssignTarget(self, chlist[0])
-            valuestr = ast_visitor.getAssignValue(self, chlist[1])
-            st = targetstr + ' = ' + valuestr + ';'
+            targetstr, targetname = ast_visitor.getAssignTarget(self, chlist[0])
+            valuestr, valuelist = ast_visitor.getAssignValue(self, chlist[1])
+            st = self.get_indent() + targetstr + ' = ' + valuestr + ';'
+            if self.state == 0:
+                TopfileSymbolTable[targetname] = valuelist
             return st
-
         elif isinstance(node, ast.AugAssign):
             chlist = ast_visitor.get_chlist(self, node)
             print 'AugAssign: childs = ', len(chlist)
-            targetstr = ast_visitor.getAssignTarget(self, chlist[0])
+            targetstr, targetname = ast_visitor.getAssignTarget(self, chlist[0])
             operatorstr = ast_visitor.getOperator(self, chlist[1])
-            valuestr = ast_visitor.getAssignValue(self, chlist[2])
-            st = targetstr + ' ' + operatorstr + '= ' + valuestr + ';'
+            valuestr, valuelist = ast_visitor.getAssignValue(self, chlist[2])
+            st = self.get_indent() + targetstr + ' ' + operatorstr + '= ' + valuestr + ';'
             return st
         elif isinstance(node, ast.Expr):
             print 'Expr: '
             chlist = ast_visitor.get_chlist(self, node)
-            st = ast_visitor.getAssignValue(self, chlist[0])
-            return st + ';'
+            st, valuelist = ast_visitor.getAssignValue(self, chlist[0])
+            targetname = valuelist[0] + valuelist[1]
+            if self.state == 0:
+                TopfileSymbolTable[targetname] = valuelist
+            return self.get_indent() + st + ';'
         elif isinstance(node, ast.For):
             st = ast_visitor.getFor(self, node)
             return st
         elif isinstance(node, ast.Return):
             chlist = ast_visitor.get_chlist(self, node)
             print 'Return: childs = ', len(chlist)
-            st = 'return '+ ast_visitor.getAssignValue(self, chlist[0])
+            valuestr, valuelist = ast_visitor.getAssignValue(self, chlist[0])
+            st = 'return '+ valuestr
             # for ch in ast.iter_child_nodes(node):
             #     print '        ', ch
-            return st + ';'
+            return self.get_indent() + st + ';'
         elif isinstance(node, ast.FunctionDef):
             if node.name == 'forward':
                 print '!This forward'
@@ -191,17 +204,18 @@ class ast_visitor(ast.NodeVisitor):
                 print '!This Layer: ', node.name
                 layer_func_ast.append(node)         
             else:
-                indent = 4
                 chlist = ast_visitor.get_chlist(self, node)
                 print 'FunctionDef: Name = ', node.name
                 actual = ast_visitor.getActuals(self, chlist[0])
-                st += 'int ' + node.name + actual + ' {\n'
+                st += self.get_indent() + 'int ' + node.name + actual + ' {\n'
+                self.indent += 4
                 for ch in chlist[1:]:
                     #print chch
                     st += ast_visitor.getStatement(self, ch)
                     st += '\n'
+                st += self.get_indent() + '}\n'
             return st
-                    # ast_visitor.get_indent(self, indent)
+                    # ast_visitor.self.get_indent(self, indent)
         # elif isinstance(ch, ast.Name):
         #     print 'Name: ', ch.id
         #     ast.NodeVisitor.generic_visit(self, ch)
@@ -222,57 +236,30 @@ class ast_visitor(ast.NodeVisitor):
             ast.NodeVisitor.generic_visit(self, node)
 
 
-    def getExpr(self, node):
-        pass 
-        # if isinstance(node, ast.Name):
-        #     print '        Name: ', node.id
-        #     ast.NodeVisitor.generic_visit(self, ch)
-        # elif isinstance(ch, ast.Num):
-        #     print '        Num: ', ch.n
-        #     ast.NodeVisitor.generic_visit(self, ch)
-        # elif isinstance(ch, ast.Tuple):
-        #     print '        Tuple: ('
-        #     ast_visitor.getExpr(self, ch)
-        #     print '        )'
-        # elif isinstance(ch, ast.Call):
-        #     print '        Call: '                    
-        #     ast_visitor.getCallParams(self, ch)
-        # elif isinstance(ch, ast.Attribute):
-        #     print '        Attr:(', ch.attr
-        #     for chch in ast.iter_child_nodes(ch):
-        #         if isinstance(chch, ast.Name):
-        #             print '            Attrof:', chch.id
-        #         elif isinstance(chch, ast.Load):
-        #             print '            AttrLoad'
-        #         elif isinstance(chch, ast.Store):
-        #             print '            AttrStore'
-        #         else:
-        #             print 'unknown type in getExpr:Attr'
-        #     print '                )'
-
-
     def getActuals(self, node):
-        actuallist = []
-        defaultlist = []
+        stractuallist = []
+        strdefaultlist = []
+        # actuallist = []
+        # defaultlist = []
         st = '('
         print '    printing Actuals:'
         for ch in ast.iter_child_nodes(node):
-            print '!!!!!!!',ch
+            #print '!!!!!!!',ch
             if isinstance(ch, ast.Name):
                 print '        ActName:', ch.id
-                actuallist.append(ch.id)
+                stractuallist.append(ch.id)
             elif isinstance(ch, ast.Num):
                 print '        ActDefNum:', ch.n
-                defaultlist.append(str(ch.n))
+                strdefaultlist.append(str(ch.n))
             elif isinstance(ch, ast.Str):
                 print '        ActDefStr:', ch,stddir
-                defaultlist.append(ch.s)
+                strdefaultlist.append(ch.s)
             else:
                 print 'Unknown args'
         print
-        for i in range(len(defaultlist)):
-            actuallist[-1-i] += ' = ' + defaultlist[i]
-        for tmpst in actuallist:
+        for i in range(len(strdefaultlist)):
+            stractuallist[-1-i] += ' = ' + strdefaultlist[i]
+        for tmpst in stractuallist:
             st += tmpst + ', '
         if st[-1] == '(' :
             return '()'
@@ -293,28 +280,47 @@ class ast_visitor(ast.NodeVisitor):
         else:
             print 'Unknown getAssignTarget'
             st = ''
-        return st
+        targetname = st
+        return st, targetname
 
     def getAssignValue(self, node):
         #print '    AssignValue:', node
         st = ''
+        valuelist = []
         if isinstance(node, ast.Num):
             print '        Num: ', node.n
             st = str(node.n)
+            valuelist.append('Num')
+            valuelist.append(str(node.n))
         elif isinstance(node, ast.Name):
             print '        Name: ', node.id
             st = node.id
+            valuelist.append('Name')
+            valuelist.append(node.id)
+        elif isinstance(node, ast.Str):
+            print '        Name: ', node.s
+            st = node.s
+            valuelist.append('Str')
+            valuelist.append(node.s)
         elif isinstance(node, ast.Call):
             # for ch in ast.iter_child_nodes(node):
             #     print "            CallChildren: ", ch
             chlist = ast_visitor.get_chlist(self, node)
-            st += ast_visitor.getCallName(self, chlist[0]) + '('
+            callname = ast_visitor.getCallName(self, chlist[0])
+            st +=  callname + '('
+            valuelist.append('Call')
+            valuelist.append(callname)
+            callparam = []
             for ch in chlist[1:]:
-                st += ast_visitor.getCallParams(self, ch) + ', '
+                onecallparam = ast_visitor.getCallParams(self, ch)
+                st +=  onecallparam + ', '
+                callparam.append(onecallparam)
+            valuelist.append(callparam)
+            print 'valuelist: ', valuelist
             if st[-1] == '(':
-                return st + ')'
+                return st + ')', valuelist
             else:
-                return st[:-2] + ')'
+                return st[:-2] + ')' , valuelist
         elif isinstance(node, ast.Subscript):
             st = ast_visitor.getSubscript(self, node)
         elif isinstance(node, ast.Attribute):
@@ -327,12 +333,14 @@ class ast_visitor(ast.NodeVisitor):
             right = ast_visitor.getAssignValue(self, chlist[2])
             st = left + ' ' + operater + ' ' + right
         elif isinstance(node, ast.Tuple):
-            st = ast_visitor.getTuple(self, node)
+            st, tuplelist= ast_visitor.getTuple(self, node)
+            valuelist.append('Tuple')
+            valuelist.append(tuplelist)
         elif isinstance(node, ast.List):
             st = ast_visitor.getList(self, node)
         else:
             st = 'Unknown Expr'
-        return st
+        return st, valuelist
 
     def getOprand(self, node):
         print '    OprandValue:', node
@@ -427,11 +435,15 @@ class ast_visitor(ast.NodeVisitor):
         print '            RangeStart = ', start
         print '            RangeEnd = ', end
 
-        st = 'for ({} = {} ; {} < {} ; {} ++)'.format( ob, start, ob, end , ob)
+        st = self.get_indent()
+        st += 'for ({} = {} ; {} < {} ; {} ++)'.format( ob, start, ob, end , ob)
         st += ' { \n'
+        self.indent += 4
         for ch in chlist[2:]:
-            st += ast_visitor.getStatement(self, ch) + ';\n'
-        return st + '}' 
+            st += ast_visitor.getStatement(self, ch) + '\n'
+        self.indent -= 4
+        st += self.get_indent() + '}'
+        return st
     
 
     def getOperator(self, node):
@@ -451,15 +463,18 @@ class ast_visitor(ast.NodeVisitor):
             print 'Unknown operater'
 
     def getTuple(self, node):
+        strtuplelist = []
         tuplelist = []
         print '        TargetTuple('
         for ch in ast.iter_child_nodes(node):
             if isinstance(ch, ast.Name):
                 print '            TupleName:', ch.id
+                strtuplelist.append(ch.id)
                 tuplelist.append(ch.id)
             elif isinstance(ch, ast.Num):
                 print '            TupleNum:', ch.n
-                tuplelist.append(ch.n)
+                strtuplelist.append(ch.n)
+                tuplelist.append(str(ch.n))
             elif isinstance(ch, ast.Load):
                 print '            TupleLoad'
             elif isinstance(ch, ast.Store):
@@ -467,9 +482,9 @@ class ast_visitor(ast.NodeVisitor):
             else:
                 print 'unknown type in getTuple'
         print '                )'
-        st = str(tuplelist)
+        st = str(strtuplelist)
         st = '{' + st[1:-1] + '}'
-        return st
+        return st, tuplelist
 
     def getList(self, node):
         listlist = []
@@ -545,10 +560,12 @@ class ast_visitor(ast.NodeVisitor):
 
 
 class NetNode:
-    def __init__(self):
+    def __init__(self, name, batch_size):
+        self.name = name
         self.ensemble_list = []
         self.buffer_list = []
         self.task_list = []
+        self.batch_size = batch_size
 
 class EnsembleNode:
     def __init__(self, name):

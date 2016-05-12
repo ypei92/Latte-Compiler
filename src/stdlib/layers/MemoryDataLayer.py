@@ -4,12 +4,13 @@ from neuron import*
 from ensemble import*
 
 class MemoryDataEnsemble():
-    def __init__(self, name, neurons, value, phase, net_subgroup = 1):
+    def __init__(self, name, neurons, value, phase, batch_size, net_subgroup = 1):
         self.name = name
         self.neurons = neurons
         self.value = value
         self.connections = []
         self.phase = phase
+        self.batch_size = batch_size
         self.net_subgroup = 1
 
     def forward(ens, data):
@@ -31,7 +32,7 @@ def MemoryDataLayer(net, name, shape, batch_size, filename, phase = 'TrainTest')
     #value = empty(shape_array, dtype = float)
     #value = random(shape_array)
     value = load(shape_array, filename)
-    ens = MemoryDataEnsemble(name, data_neurons, value, phase)
+    ens = MemoryDataEnsemble(name, data_neurons, value, phase, batch_size)
     add_ensemble(net, ens)
     return ens, value
 

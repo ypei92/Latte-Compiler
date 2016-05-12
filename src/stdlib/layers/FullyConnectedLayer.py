@@ -9,15 +9,14 @@ class WeightedNeuron(Neuron):
 	    self.gd_bias = gd_bias
 
     def forward(neuron):
-        length = neuron.inputs[0]
-        for i in range(0, length):
+        for i in range(0, neuron.inputs[0]):
             neuron.value += neuron.weights[i] * neuron.inputs[0][i]
         neuron.value += neuron.bias[0]
 
     def backward(neuron):
-        length = neuron.inputs[0]
-        for i in range(0, length):
+        for i in range(0, neuron.inputs[0]):
             neuron.gd_inputs[0][i] += neuron.weights[i] * neuron.gd_value
+        for i in range(0, neuron.inputs[0]):
             neuron.gd_weights[i]+= neuron.inputs[0][i] * neuron.gd_value
         neuron.gd_bias[0] += neuron.gd_value
 

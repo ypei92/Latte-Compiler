@@ -5,11 +5,11 @@ def main():
 	labelfile = '../test/fully-connected/labelfile.txt'
 	
 	net = Net(batch_size)
-	shape = (5, 10)
+	shape = (25,)
 
 
-	data, data_value = MemoryDataLayer(net, "data", shape, batch_size, datafile)
-	label, label_value = MemoryDataLayer(net, "data", shape, batch_size, labelfile)
+	data = MemoryDataLayer(net, "data", shape, batch_size, datafile)
+	label = MemoryDataLayer(net, "data", shape, batch_size, labelfile)
 	fc1 = FullyConnectedLayer('fc1', net, data, 100)
 	fc2 = FullyConnectedLayer('fc2', net, fc1, 10)
 	loss= SoftmaxLossLayer('loss', net, fc2, label)
@@ -22,6 +22,7 @@ def main():
 	params = SolverParameters( lr_policy, mom_policy, max_epoch, regu_coef)
 	sgd = SGD(params)
 	solve(sgd, net)
+
 
 
 	
