@@ -10,15 +10,15 @@ class MemoryDataEnsemble():
         self.value = value
         self.connections = []
         self.phase = phase
-        net_subgroup = 1
+        self.net_subgroup = 1
 
-    def forward(dim, ens, data, net, phase):
+    def forward(ens, data):
         data = ens.value
 
-    def backward(dim, ens, data, net, phase):
+    def backward():
         return
 
-def MemoryDataLayer(net, name, shape, batch_size, phase = Traintest):
+def MemoryDataLayer(net, name, shape, batch_size, filename, phase = 'TrainTest'):
     data_neurons = empty(shape, dtype = object)
     length = size(data_neurons)
 
@@ -28,7 +28,9 @@ def MemoryDataLayer(net, name, shape, batch_size, phase = Traintest):
     shape_array = list(shape)
     shape_array.append(batch_size)
 
-    value = empty(shape, dtype = float)
+    #value = empty(shape_array, dtype = float)
+    #value = random(shape_array)
+    value = load(shape_array, filename)
     ens = MemoryDataEnsemble(name, data_neurons, value, phase)
     add_ensemble(net, ens)
     return ens, value
