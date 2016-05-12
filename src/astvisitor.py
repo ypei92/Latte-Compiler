@@ -536,7 +536,7 @@ class NetNode:
     def __init__(self):
         self.name = ''
         self.ensemble_list = []
-        self.buffer_list = []
+        self.buffer_list = {}
         self.task_list = []
         self.batch_size = 0
 
@@ -553,24 +553,38 @@ class EnsembleNode:
         self.ensemble_fields_list = []
         self.ensemble_actuals_list = []
         self.neuron_size = 0
-        self.neuron_type = ''
+        self.neuron_type = ""
         self.neuron_fields_list = []
         self.source_list = []
         self.forward_ast = None #body ast
         self.backward_ast = None #body ast
         self.forward_actuals_list = []
         self.backward_actuals_list = []
+        self.params = []
+
+class ParamNode:
+    def __init__(self, en_name, attr, learning_rate, regu_coef):
+        self.name = en_name + "_" + attr
+        self.gradient_name = en_name + "_gd_" + attr
+        self.hist_name = en_name + "_" + attr + "_hist"
+        self.learning_rate = learning_rate
+        self.regu_coef = regu_coef
+        self.value = None
+        self.gd_value = None
+        self.hist = None
+
 
 class FieldsNode:
     def __init__(self):
-        self.name = ''
-        self.type = ''
-        self.init = ''
+        self.name = ""
+        self.type = ""
+        self.init = ""
+        self.size = 1
 
 class ActualNode:
     def __init__(self):
-        self.name = ''
-        self.type = ''
+        self.name = ""
+        self.type = ""
         #self.value
 
 class SourceNode:
@@ -579,7 +593,9 @@ class SourceNode:
         self.mapping_ast = None
         self.is_dim_fixed = False
         self.is_one_to_one = False
-
+        self.copy = true
+        self.size = 0
+        self.shape = None
 
 def initStructure():
     for key in TopfileSymbolTable.keys():
