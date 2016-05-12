@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import math
 
 class SoftmaxLossNeuron:
     def __init__(self, value = 0.0, gd_value = 0.0):
@@ -7,9 +6,7 @@ class SoftmaxLossNeuron:
         self.gd_value = gd_value
 
 class SoftmaxLossEnsemble:
-    #def __init__(self, name, num_inputs, neurons = np.empty(0, dtype = object), connections = [], phase = Train, net_subgroup = 1):
-    def __init__(self, name, num_inputs, neurons = np.empty(0, dtype = object),
-            connections = [], phase = 'you can you up', net_subgroup = 1):
+    def __init__(self, name, num_inputs, neurons, connections = [], phase = 'Train', net_subgroup = 1):
         self.name = name
         self.neurons = neurons
         self.connections = connections
@@ -17,19 +14,10 @@ class SoftmaxLossEnsemble:
         self.phase = phase
         self.net_subgroup = net_subgroup
 
-def init(ensemble, net):
-    net.buffers[0] = {ensemble.name + "prob":np.empty((ensemble.num_inputs, net.batch_size), dtype = float)}
-    net.buffers[1] = {ensemble.name + "value":np.empty(1, dtype = float)}
-
-def get_forward_args(ens):
-    return [ens.name+"value", ens.name+"prob"]
-
-def get_backward_args(ens):
-    return [ens.name+"prob"]
-
 def SoftmaxLossLayer(name, net, input_ensemble, label_ensemble):
     num_inputs = len(input_ensemble.neurons)
-    softmax = SoftmaxLossEnsemble(name, num_inputs)
+    neurons = empty(0, dtype = object)
+    softmax = SoftmaxLossEnsemble(name, num_inputs, neurons)
     net.ensembles.append(softmax)
     def mapping1():
         return [(0,num_inputs)]
@@ -39,34 +27,37 @@ def SoftmaxLossLayer(name, net, input_ensemble, label_ensemble):
     add_connections(net, input_ensemble, softmax, mapping2)
     return softmax
 
-def forward(loss, prob, input, label):
+
+def forward(loss, prob, input, label, float_epsilon):
+    i = 0
+    n = 0
     loss[0] = 0.0
-    for n in range(input.shape[1]) :
-        maxval = float("-inf")
-        for i in range(input.shape[0]) :
+    for n in range(0, input.shape[1]) :
+        maxval = -100000000
+        for i in range(0, input.shape[0]) :
             maxval = max(maxval, input[i][n])
-        for i in range(input.shape[0]) :
-            prob[i][n] = math.exp(input[i][n] - maxval)
+        for i in range(0, input.shape[0]) :
+            prob[i][n] = exp(input[i][n] - maxval)
             the_sum = 0.0
-        for i in range(input.shape[0]) :
+        for i in range(0, input.shape[0]) :
             the_sum += prob[i][n]
-        for i in range(input.shape[0]) :
+        for i in range(0, input.shape[0]) :
             prob[i][n] /= the_sum
 
-    for n in range(input.shape[1]) :
+    for n in range(0, input.shape[1]) :
         #rounding DIFFERENCE
         label_value = int(round(label[0][n]))
-        loss[0] -= math.log(max(prob[label_value][n], sys.float_info.epsilon))
+        loss[0] -= log(max(prob[label_value][n], float_epsilon))
         loss[0] /= input.shape[1]
     return 0
 
 def backward(prob, diff, label):
-    for i in range(diff.size) :
+    for i in range(0, diff.size) :
         diff[i] = prob[i]
-    for n in range(diff.shape[1]) :
+    for n in range(0, diff.shape[1]) :
         label_value = int(round(label[0][n]))
         diff[label_value][n] -= 1
-    for i in range(diff.size) :
+    for i in range(0, diff.size) :
         diff[i] /= diff.shape[1]
     return 0
         

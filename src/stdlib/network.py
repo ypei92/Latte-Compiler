@@ -5,7 +5,7 @@ class Net:
     	self.ensembles = []
         self.ensembles_map = {}
 
-        self.buffers = ([],[])
+        self.buffers = ({},{})
         self.curr_buffer_set = 1
 
         #self.forward_tasks = TaskSet()

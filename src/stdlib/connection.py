@@ -27,7 +27,7 @@ def add_connections(net, src, sink, mapping, recurrent = False):
 
     is_dim_fixed = check_dim()
     is_one_to_one = false
-    if !all(is_dim_fixed):
+    if not all(is_dim_fixed):
         is_one_to_one = check_one_to_one()
 
     sink.connections.append(Connection(src, mapping, shape, size, is_dim_fixed, is_one_to_one, recurrent))
