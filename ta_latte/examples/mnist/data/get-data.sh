@@ -14,7 +14,7 @@ do
     gunzip -c $TARGET_DIR/$dset > $TARGET_DIR/$STEM
 done
 
-julia convert.jl $TARGET_DIR
+/Users/tianyizhang/Desktop/data_set/Julia-0.4.5.app/Contents/Resources/julia/bin/julia convert.jl $TARGET_DIR
 
 echo "$TARGET_DIR/train.hdf5" > train.txt
 echo "$TARGET_DIR/test.hdf5" > test.txt
