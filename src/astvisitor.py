@@ -563,7 +563,7 @@ class NetNode:
     def __init__(self, name, batch_size):
         self.name = name
         self.ensemble_list = []
-        self.buffer_list = []
+        self.buffer_list = {}
         self.task_list = []
         self.batch_size = batch_size
 
@@ -573,7 +573,7 @@ class EnsembleNode:
         self.ensemble_fields_list = []
         self.ensemble_actuals_list = []
         self.neuron_size = 0
-        self.neuron_type = ''
+        self.neuron_type = ""
         self.neuron_fields_list = []
         self.source_list = []
         self.forward_ast = None #body ast
@@ -583,14 +583,15 @@ class EnsembleNode:
 
 class FieldsNode:
     def __init__(self):
-        self.name = ''
-        self.type = ''
-        self.init = ''
+        self.name = ""
+        self.type = ""
+        self.init = ""
+        self.size = 1
 
 class ActualNode:
     def __init__(self):
-        self.name = ''
-        self.type = ''
+        self.name = ""
+        self.type = ""
         #self.value
 
 class SourceNode:
@@ -599,7 +600,7 @@ class SourceNode:
         self.mapping_ast = None
         self.is_dim_fixed = False
         self.is_one_to_one = False
-
+        self.copy = true
 
 if __name__ == "__main__":
     main()
