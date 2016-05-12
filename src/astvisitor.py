@@ -11,8 +11,10 @@ from tools import *
 import ast
 import numpy as np
 
+
 TopfileSymbolTable = {}
 LayerDict = {}
+LayerList = []
 EnsembleDict = {}
 NeuronDict = {}
 
@@ -38,37 +40,6 @@ def initLayerDict():
     for files in stddir:
         if not LayerDict.has_key(files[0:-3]):
             LayerDict[files[0:-3]] = stdpath + '/' + files
-
-def main():
-    initLayerDict()
-
-    topfile = sys.argv[1]
-    print('=' * 50)
-    print('Latte Compiler: Processing ', topfile)
-    print('=' * 50)
-    ftop = open(topfile)
-    top_expr = ftop.read()
-    top_ast = ast.parse(top_expr)
-    ast_print(topfile, top_ast) 
-
-    x = ast_visitor(0)
-    x.visit(top_ast)
-
-    #print TopfileSymbolTable
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(TopfileSymbolTable)
-
-    # x.state = 1
-    # for layer in layer_func_ast:
-    #     x.visit(layer)
-
-'''
-    x.state = 2
-    #for i 
-
-    for i in ast.iter_fields(ch):
-        print i
-'''
 
 class ast_visitor(ast.NodeVisitor):
     def __init__(self, state):
@@ -161,6 +132,8 @@ class ast_visitor(ast.NodeVisitor):
             st = self.get_indent() + targetstr + ' = ' + valuestr + ';'
             if self.state == 0:
                 TopfileSymbolTable[targetname] = valuelist
+                if 'Layer' in st:
+                    LayerList.append(targetname)
             return st
         elif isinstance(node, ast.AugAssign):
             chlist = ast_visitor.get_chlist(self, node)
@@ -560,12 +533,19 @@ class ast_visitor(ast.NodeVisitor):
 
 
 class NetNode:
-    def __init__(self, name, batch_size):
-        self.name = name
+    def __init__(self):
+        self.name = ''
         self.ensemble_list = []
         self.buffer_list = []
         self.task_list = []
-        self.batch_size = batch_size
+        self.batch_size = 0
+
+    def printNetNode(self):
+        print 'NetName = ', self.name
+        print 'BatchSize = ', self.batch_size
+        print 'ensemble_list = '
+        for ens in self.ensemble_list:
+            print '    ', ens.ensemble_name
 
 class EnsembleNode:
     def __init__(self, name):
@@ -600,6 +580,64 @@ class SourceNode:
         self.is_dim_fixed = False
         self.is_one_to_one = False
 
+
+def initStructure():
+    for key in TopfileSymbolTable.keys():
+        value = TopfileSymbolTable[key]
+        if value[0] == 'Call' and value[1] == 'Net':
+            net.name = key
+            net.batch_size = searchNum(value[2][0])
+            break
+
+    for key in LayerList:
+        value = TopfileSymbolTable[key]
+        net.ensemble_list.append(EnsembleNode(key))
+
+
+def searchNum(string):
+    value = TopfileSymbolTable[string]
+    if value[0] == 'Num':
+        return eval(value[1])
+    else:
+        return -1
+
+def main():
+    global net
+
+    initLayerDict()
+    net = NetNode()
+
+    topfile = sys.argv[1]
+    print('=' * 50)
+    print('Latte Compiler: Processing ', topfile)
+    print('=' * 50)
+    ftop = open(topfile)
+    top_expr = ftop.read()
+    top_ast = ast.parse(top_expr)
+    ast_print(topfile, top_ast) 
+
+    x = ast_visitor(0)
+    x.visit(top_ast)
+
+    #print TopfileSymbolTable
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(TopfileSymbolTable)
+    print
+
+    initStructure()
+    net.printNetNode()
+
+    # x.state = 1
+    # for layer in layer_func_ast:
+    #     x.visit(layer)
+
+'''
+    x.state = 2
+    #for i 
+
+    for i in ast.iter_fields(ch):
+        print i
+'''
 
 if __name__ == "__main__":
     main()
