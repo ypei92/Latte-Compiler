@@ -10,6 +10,7 @@ from network import *
 from tools import *
 import ast
 import numpy as np
+import sets as Set
 
 
 TopfileSymbolTable = {}
@@ -527,15 +528,25 @@ class ast_visitor(ast.NodeVisitor):
     #     #print type(node).__name__
     #     ast.NodeVisitor.generic_visit(self, node)
 
+class Task:
+    def __init__(self, func, arg_list):
+        self.func = func
+        self.arg_list = arg_list
 
 class NetNode:
     def __init__(self):
         self.name = ''
         self.ensemble_list = []
         self.buffer_list = {}
-        self.task_list = []
-        self.batch_size = 0
-
+        self.batch_size = 1
+        self.forward_task_list = []
+        self.backward_task_list = []
+        self.batch_size = batch_size
+        self.foward_body = {"Train":[], "Test":[]}
+        self.foward_args = {"Train":Set(), "Test":Set()}
+        self.backward_body = {"Train":[], "Test":[]}
+        self.backward_args = {"Train":Set(), "Test":Set()} 
+        
     def printNetNode(self):
         print 'NetName = ', self.name
         print 'BatchSize = ', self.batch_size
