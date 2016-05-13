@@ -55,23 +55,20 @@ class ast_visitor(ast.NodeVisitor):
         return st
 
     def visit_Module(self, node):
-        print '0 Module: '
+        # print '0 Module: '
         st = ''
         if self.state == 0:
             for ch in ast.iter_child_nodes(node):
                 if isinstance(ch, ast.FunctionDef):
                     if ch.name == 'forward':
-                        print '!This forward'
+                        # print '!This forward'
                         forward_func_ast.append(ch)
                     elif ch.name == 'backward':
-                        print '!This backward'
+                        # print '!This backward'
                         backward_func_ast.append(ch)
                     elif 'mapping' in ch.name:
-                        print '!This mapping'
-                        mapping_func_ast.append(ch)
-                    elif 'Layer' in ch.name:
-                        print '!This Layer: ', ch.name
-                        # layer_func_ast.append(ch)         
+                        # print '!This mapping'
+                        mapping_func_ast.append(ch)       
                     else:
                         self.indent += 4
                         chlist = ast_visitor.get_chlist(self, ch)
@@ -87,7 +84,7 @@ class ast_visitor(ast.NodeVisitor):
                         st += '}\n'
                         self.indent -= 4
                 elif isinstance(ch, ast.Assign):
-                    print 'Assign: getExpr'
+                    # print 'Assign: getExpr'
                     ast_visitor.getStatement(self, ch)
                 elif isinstance(ch, ast.ClassDef):
                     print 'ClassDef: ' + ch.name
@@ -158,7 +155,7 @@ class ast_visitor(ast.NodeVisitor):
         st = ''
         if isinstance(node, ast.Assign):
             chlist = ast_visitor.get_chlist(self, node)
-            print 'Assign: childs = ', len(chlist) 
+            # print 'Assign: childs = ', len(chlist) 
             targetstr, targetname = ast_visitor.getAssignTarget(self, chlist[0])
             valuestr, valuelist = ast_visitor.getAssignValue(self, chlist[1])
             st = self.get_indent() + targetstr + ' = ' + valuestr + ';'
@@ -169,14 +166,14 @@ class ast_visitor(ast.NodeVisitor):
             return st
         elif isinstance(node, ast.AugAssign):
             chlist = ast_visitor.get_chlist(self, node)
-            print 'AugAssign: childs = ', len(chlist)
+            # print 'AugAssign: childs = ', len(chlist)
             targetstr, targetname = ast_visitor.getAssignTarget(self, chlist[0])
             operatorstr = ast_visitor.getOperator(self, chlist[1])
             valuestr, valuelist = ast_visitor.getAssignValue(self, chlist[2])
             st = self.get_indent() + targetstr + ' ' + operatorstr + '= ' + valuestr + ';'
             return st
         elif isinstance(node, ast.Expr):
-            print 'Expr: '
+            print '    Expr: '
             chlist = ast_visitor.get_chlist(self, node)
             st, valuelist = ast_visitor.getAssignValue(self, chlist[0])
             targetname = valuelist[0] + valuelist[1]
@@ -188,7 +185,7 @@ class ast_visitor(ast.NodeVisitor):
             return st
         elif isinstance(node, ast.Return):
             chlist = ast_visitor.get_chlist(self, node)
-            print 'Return: childs = ', len(chlist)
+            # print 'Return: childs = ', len(chlist)
             valuestr, valuelist = ast_visitor.getAssignValue(self, chlist[0])
             st = 'return '+ valuestr
             # for ch in ast.iter_child_nodes(node):
@@ -196,18 +193,14 @@ class ast_visitor(ast.NodeVisitor):
             return self.get_indent() + st + ';'
         elif isinstance(node, ast.FunctionDef):
             if node.name == 'forward':
-                print '!This forward'
+                # print '!This forward'
                 forward_func_ast.append(node)
-
             elif node.name == 'backward':
-                print '!This backward'
+                # print '!This backward'
                 backward_func_ast.append(node)
             elif 'mapping' in node.name:
-                print '!This mapping'
-                mapping_func_ast.append(node)
-            elif 'Layer' in node.name:
-                print '!This Layer: ', node.name
-                # layer_func_ast.append(node)         
+                # print '!This mapping'
+                mapping_func_ast.append(node)         
             else:
                 chlist = ast_visitor.get_chlist(self, node)
                 print 'FunctionDef: Name = ', node.name
@@ -324,7 +317,7 @@ class ast_visitor(ast.NodeVisitor):
                 st +=  onecallparam + ', '
                 callparam.append(onecallparam)
             valuelist.append(callparam)
-            print 'valuelist: ', valuelist
+            # print 'valuelist: ', valuelist
             if st[-1] == '(':
                 return st + ')', valuelist
             else:
@@ -390,15 +383,15 @@ class ast_visitor(ast.NodeVisitor):
 
     def getCallParams(self, node):
         st = ''
-        print '    printing FuncParam:'
+        # print '    printing FuncParam:'
         if isinstance(node, ast.Name):
-            print '        ParamName:', node.id
+            # print '        ParamName:', node.id
             st = node.id
         elif isinstance(node, ast.Num):
-            print '        ParamNum:', node.n
+            # print '        ParamNum:', node.n
             st = str(node.n)
         elif isinstance(node, ast.Str):
-            print '        ParamStr:', node.s
+            # print '        ParamStr:', node.s
             st = node.s
         elif isinstance(node, ast.Tuple):
             st = ast_visitor.getTuple(self, node)
@@ -456,16 +449,16 @@ class ast_visitor(ast.NodeVisitor):
 
     def getOperator(self, node):
         if isinstance(node, ast.Add):
-            print '        + '
+            # print '        + '
             return '+'
         elif isinstance(node, ast.Sub):
-            print '        - '
+            # print '        - '
             return '-'
         elif isinstance(node, ast.Mult):
-            print '        * '
+            # print '        * '
             return '*'
         elif isinstance(node, ast.Div):
-            print '        / '
+            # print '        / '
             return '/'
         else:
             print 'Unknown operater'
@@ -564,7 +557,7 @@ class ast_visitor(ast.NodeVisitor):
 
     def getFunctionDef(self, node):
         if isinstance(node, ast.FunctionDef):
-            print node.name
+            # print node.name
             return node.name
 
     # def generic_visit(self, node):
@@ -780,7 +773,7 @@ def main():
     top_expr = ftop.read()
     ftop.close()
     top_ast = ast.parse(top_expr)
-    ast_print(topfile, top_ast) 
+    #ast_print(topfile, top_ast) 
 
     x = ast_visitor(0)
     x.visit(top_ast)
@@ -802,6 +795,13 @@ def main():
         layer_ast = ast.parse(fcontent)
         x.visit(layer_ast)
         f.close()
+
+    x.state = 2
+    x.visit(forward_func_ast[2])
+    ast_print('forward', forward_func_ast[2])
+    # for tree in forward_func_ast:
+    #     x.visit(tree)
+    #     ast_print('forward', tree) 
 
     counter = 0
     for ens in net.ensemble_list:
