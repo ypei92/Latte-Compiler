@@ -683,10 +683,10 @@ class NetNode:
         self.forward_task_list = []
         self.backward_task_list = []
         self.batch_size = batch_size
-        # self.foward_body = {"Train":[], "Test":[]}
-        # self.foward_args = {"Train":Set(), "Test":Set()}
-        # self.backward_body = {"Train":[], "Test":[]}
-        # self.backward_args = {"Train":Set(), "Test":Set()} 
+        self.foward_body = {"Train":[], "Test":[]}
+        self.foward_args = {"Train":Set.Set(), "Test":Set.Set()}
+        self.backward_body = {"Train":[], "Test":[]}
+        self.backward_args = {"Train":Set.Set(), "Test":Set.Set()} 
         
     def printNetNode(self):
         print 'NetName = ', self.name
@@ -711,6 +711,7 @@ class EnsembleNode:
         self.backward_actuals_list = []
         self.params = []
         self.name = name2
+        self.arg_info = {}
 
 class ParamNode:
     def __init__(self, en_name, attr, learning_rate, regu_coef):
@@ -754,6 +755,30 @@ def searchNum(string):
         return eval(value[1])
     else:
         return -1
+
+def transform_fn(ensemble):
+    pass
+
+def remove_line_nodes(ast):
+    pass
+
+def drop_fixed_dims(ast, arg_info):
+    pass
+
+def add_neuron_loop(body, args, value):
+    pass
+
+
+def gen_forward(ensemble, net):
+    buff = net.buffer_list[ensemble.name + "_value"]
+    for(index, src) in enumerate(ensemble.source_list):
+        sink = ensemble.name + "_inputs_" + str(index)
+        ensemble.arg_info[sink] = src.is_dim_fixed
+    transform_fn(ensemble)
+
+
+def norm_forward(ensemble, net):
+    pass
 
 num_of_threads = 4;
 
@@ -875,6 +900,14 @@ def main():
 
     for key, value in net.buffer_list.iteritems():
         print key, value.shape
+
+    for ensemble in net.ensemble_list:
+        if ensemble.ensemble_type == "DataEnsemble":
+            net.forward_task_list.append(Task("forward", ensemble.forward_actuals_list))
+        elif ensemble.ensemble_type == "Ensemble":
+            gen_forward(ensemble, net)
+        else: #normalization
+            norm_forward(ensemble, net)
 
 '''
     x.state = 2
