@@ -27,38 +27,57 @@ def SoftmaxLossLayer(name, net, input_ensemble, label_ensemble):
     add_connections(net, input_ensemble, softmax, mapping2)
     return softmax
 
+# def forward(loss, prob, input, label):
+#     loss[0] = 0.0
+#     for n in range(0, input.shape[1]) :
+#         maxval = -100000000
+#         for i in range(0, input.shape[0]) :
+#             maxval = max(maxval, input[i][n])
+#         for i in range(0, input.shape[0]) :
+#             prob[i][n] = exp(input[i][n] - maxval)
+#             the_sum = 0.0
+#         for i in range(0, input.shape[0]) :
+#             the_sum += prob[i][n]
+#         for i in range(0, input.shape[0]) :
+#             prob[i][n] /= the_sum
+
+#     for n in range(0, input.shape[1]) :
+#         #rounding DIFFERENCE
+#         label_value = int(round(label[0][n]))
+#         loss[0] -= log(max(prob[label_value][n], 0.00001))
+#         loss[0] /= input.shape[1]
+#     return 0
+
 
 def forward(loss, prob, input, label):
-    i = 0
-    n = 0
     loss[0] = 0.0
-    for n in range(0, input.shape[1]) :
-        maxval = -100000000
-        for i in range(0, input.shape[0]) :
-            maxval = max(maxval, input[i][n])
-        for i in range(0, input.shape[0]) :
-            prob[i][n] = exp(input[i][n] - maxval)
-            the_sum = 0.0
-        for i in range(0, input.shape[0]) :
-            the_sum += prob[i][n]
-        for i in range(0, input.shape[0]) :
-            prob[i][n] /= the_sum
+    the_sum = 0.0
+    maxval = -100000000
+    for i in range(0, len(input)) :
+        maxval = max(maxval, input[i])
+    for i in range(0, len(input)) :
+        prob[i] = exp(input[i] - maxval)
+        the_sum += prob[i]
+    for i in range(0, len(input)) :
+        prob[i] /= the_sum
 
-    for n in range(0, input.shape[1]) :
-        #rounding DIFFERENCE
-        label_value = int(round(label[0][n]))
-        loss[0] -= log(max(prob[label_value][n], 0.00001))
-        loss[0] /= input.shape[1]
+    label_value = int(label[0])
+    loss[0] -= log(max(prob[label_value], 0.00001))
     return 0
 
-def backward(prob, diff, label):
-    for i in range(0, diff.size) :
-        diff[i] = prob[i]
-    for n in range(0, diff.shape[1]) :
-        label_value = int(round(label[0][n]))
-        diff[label_value][n] -= 1
-    for i in range(0, diff.size) :
-        diff[i] /= diff.shape[1]
+# def backward(prob, diff, label):
+#     for i in range(0, diff.size) :
+#         diff[i] = prob[i]
+#     for n in range(0, diff.shape[1]) :
+#         label_value = int(round(label[0][n]))
+#         diff[label_value][n] -= 1
+#     for i in range(0, diff.size) :
+#         diff[i] /= diff.shape[1]
+#     return 0
+
+def backward(prob, label):
+    label_value = int(label[0])
+    prob[label_value] -= 1
     return 0
         
 

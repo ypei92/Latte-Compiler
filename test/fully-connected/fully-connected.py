@@ -6,10 +6,11 @@ def main():
 	
 	net = Net(batch_size)
 	shape = (250,)
+	shapelabel = (1,)
 
 
 	data = MemoryDataLayer(net, "data", shape, batch_size, datafile)
-	label = MemoryDataLayer(net, "data", shape, batch_size, labelfile)
+	label = MemoryDataLayer(net, "data", shapelabel, batch_size, labelfile)
 	fc1 = FullyConnectedLayer('fc1', net, data, 100)
 	fc2 = FullyConnectedLayer('fc2', net, fc1, 10)
 	loss= SoftmaxLossLayer('loss', net, fc2, label)

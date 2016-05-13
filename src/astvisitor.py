@@ -610,7 +610,7 @@ def initStructure():
             ens.ensemble_fields_list.append(FieldsNode('connection', 'List', 'Empty'))
             ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'TrainTest'))
             ens.ensemble_fields_list.append(FieldsNode('net_subgroup', 'Num', '1'))
-            ens.neuron_size = eval(TopfileSymbolTable['shape'][1][0])
+            ens.neuron_size = eval(TopfileSymbolTable['shapelabel'][1][0])
             ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
             ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
         elif counter == 2:
@@ -658,8 +658,8 @@ def initStructure():
             ens.neuron_size = 1
             ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
             ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False, 1))
             ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False, 10))
+            ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False, 1))
         counter += 1
 
 class Task:
