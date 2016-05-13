@@ -1,0 +1,51 @@
+
+#val is a buffer created when read in data from file
+def forward(value, data):
+    for i in range(0, length(value)):
+        data_value[i] = value[i]
+
+#data -> fc1
+#n neurons in fc1
+@neuron forward(neuron::MLPNeuron) do
+
+    for i in 1:length(data_val)
+        fc1_value[n] += fc1_weights[i][n] * data_val[i]
+    end
+
+    fc1_value[n] += fc1_bias[n]
+end
+
+
+#fc1 -> fc2
+@neuron forward(neuron::MLPNeuron) do
+
+    for i in 1:length(fc1_value)
+        fc2_value[n] += fc2_weights[i][n] * fc1_value[i]
+    end
+
+    fc2_value[n] += fc2_bias[n]
+end
+
+#TODO
+def forward(loss, prob, input, label, float_epsilon):
+    i = 0
+    n = 0
+    loss_value[0] = 0.0
+    for n in range(0, input.shape[1]) :
+        maxval = -100000000
+        for i in range(0, input.shape[0]) :
+            maxval = max(maxval, input[i][n])
+        for i in range(0, input.shape[0]) :
+            prob[i][n] = exp(input[i][n] - maxval)
+            the_sum = 0.0
+        for i in range(0, input.shape[0]) :
+            the_sum += prob[i][n]
+        for i in range(0, input.shape[0]) :
+            prob[i][n] /= the_sum
+
+    for n in range(0, input.shape[1]) :
+        #rounding DIFFERENCE
+        label_value = int(round(label[0][n]))
+        loss[0] -= log(max(prob[label_value][n], float_epsilon))
+        loss[0] /= input.shape[1]
+    return 0
