@@ -768,12 +768,21 @@ def drop_fixed_dims(ast, arg_info):
 def add_neuron_loop(body, args, value):
     pass
 
+def gen_copy_block(ensemble, net, index):
+    return ""
 
 def gen_forward(ensemble, net):
+    body = []
+    args = []
     buff = net.buffer_list[ensemble.name + "_value"]
     for(index, src) in enumerate(ensemble.source_list):
         sink = ensemble.name + "_inputs_" + str(index)
         ensemble.arg_info[sink] = src.is_dim_fixed
+        if src.copy:
+            args.append(src.source_ensemble.name + "_value")
+            ast = gen_copy_block(ensemble, net, index)
+            body.append(ast)
+
     transform_fn(ensemble)
 
 
@@ -838,7 +847,18 @@ def main():
 
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
-            if field.name == "inputs" or field.name == "gd_inputs":
+            if ensemble.ensemble_type == "NormalizationEnsemble":
+                buff = Buff()
+                buff.init_func = "zeros"
+                buff.shape = (ensemble.source_list[0].size, net.batch_size)
+                buff.name = ensemble.name + "_prob"
+                net.buffer_list[buff.name] = buff
+                buff2 = Buff()
+                buff2.init_func = "zeros"
+                buff2.shape = (1,1)
+                buff2.name = ensemble.name + "_value"
+                net.buffer_list[buff2.name] = buff2
+            elif field.name == "inputs" or field.name == "gd_inputs":
                 pass
             elif field.name == "value" or field.name == "gd_value":
                 buff = Buffer()
@@ -877,7 +897,7 @@ def main():
                     key = ensemble.name + "_" + field.name + "_" + str(index)
                     src_buff = src.source_ensemble.name + "_" + attr
                     if src_buff in net.buffer_list:
-                        if src.is_dim_fixed:
+                        if src.is_dim_fixed: #all
                             src.copy = False
                             buff = Buffer(False, net.buffer_list[src_buff], True)
                             buff.shape = (src.size, net.batch_size)
@@ -889,8 +909,11 @@ def main():
                             buff.name = key
                             net.buffer_list[buff.name] = buff
                         else:
-                            #TODO
-                            pass
+                            src.copy = True
+                            buff = Buffer()
+                            buff.shape = (src.size, ensemble.neuron_size)
+                            buff.name = key
+                            net.buffer_list[buff.name]
                     else:
                         buff = Buffer()
                         buff.init_func = field.init
@@ -900,6 +923,12 @@ def main():
 
     for key, value in net.buffer_list.iteritems():
         print key, value.shape
+
+    for key, value in net.buffer_list.iteritems():
+        if value.new:
+            pass
+        else:
+            pass
 
     for ensemble in net.ensemble_list:
         if ensemble.ensemble_type == "DataEnsemble":
