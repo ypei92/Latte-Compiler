@@ -582,7 +582,7 @@ def initStructure():
 
     for key in LayerNameList:
         value = TopfileSymbolTable[key]
-        net.ensemble_list.append(EnsembleNode(value[1]))
+        net.ensemble_list.append(EnsembleNode(value[1], key))
 
     counter = 0
     for key in LayerNameList:
@@ -637,7 +637,7 @@ def initStructure():
             ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
             ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
             ens.params.append(ParamNode('fc1', 'weights', 2.0 , 0.0))
-            ens.source_list.append(SourceNode(net.ensemble_list[0], [0, eval(TopfileSymbolTable['shape'][1][0]) - 1], False))
+            ens.source_list.append(SourceNode(net.ensemble_list[0], [0, eval(TopfileSymbolTable['shape'][1][0]) - 1], False, 250))
         elif counter == 3 :
             ens.ensemble_fields_list.append(FieldsNode('net', 'Var', 'net'))
             ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'fc2'))
@@ -655,7 +655,7 @@ def initStructure():
             ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
             ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
             ens.params.append(ParamNode('fc1', 'weights', 2.0 , 0.0))
-            ens.source_list.append(SourceNode(net.ensemble_list[2], [0, 99], False))
+            ens.source_list.append(SourceNode(net.ensemble_list[2], [0, 99], False, 100))
         elif counter == 4 :
             ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'loss'))
             ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
@@ -665,8 +665,8 @@ def initStructure():
             ens.neuron_size = 1
             ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
             ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False))
-            ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False))
+            ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False, 1))
+            ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False, 10))
         counter += 1
 
 class Task:
@@ -696,7 +696,7 @@ class NetNode:
             print ' ', ens.ensemble_type, ' ', ens.neuron_type, ' ', ens.neuron_size
 
 class EnsembleNode:
-    def __init__(self, name):
+    def __init__(self, name, name2):
         self.ensemble_name = name
         self.ensemble_type = ''
         self.ensemble_fields_list = []
@@ -710,6 +710,7 @@ class EnsembleNode:
         self.forward_actuals_list = []
         self.backward_actuals_list = []
         self.params = []
+        self.name = name2
 
 class ParamNode:
     def __init__(self, en_name, attr, learning_rate, regu_coef):
@@ -737,13 +738,13 @@ class ActualNode:
         #self.value
 
 class SourceNode:
-    def __init__(self, ens, mapping, copy):
+    def __init__(self, ens, mapping, copy, size):
         self.source_ensemble = ens
         self.mapping_ast = None
         self.is_dim_fixed = True
         self.is_one_to_one = False
         self.copy = copy
-        self.size = 0
+        self.size = size
         self.shape = None
 
 
@@ -811,16 +812,16 @@ def main():
         counter += 1
 
     for ensemble in net.ensemble_list:
-        for field in ensemble.neuron_field_list:
-            if field.name == "inputs" || field.name == "gd_inputs":
+        for field in ensemble.neuron_fields_list:
+            if field.name == "inputs" or field.name == "gd_inputs":
                 pass
-            elif field.name == "value" || field.name == "gd_value":
+            elif field.name == "value" or field.name == "gd_value":
                 buff = Buffer()
                 buff.init_func = "zeros"
                 buff.shape = (ensemble.neuron_size, net.batch_size)
                 buff.name = ensemble.name + "_" + field.name
                 net.buffer_list[buff.name] = buff
-            elif field.type != "float" || field.type != "int":
+            elif field.type != "Num":
                 buff = Buffer()
                 buff.init_func = field.init
                 buff.shape = (field.size, ensemble.neuron_size)
@@ -844,12 +845,12 @@ def main():
             net.buffer_list[buff.name] = buff
 
     for ensemble in net.ensemble_list:
-        for field in ensemble.neuron_field_list:
-            if field.name == "inputs" || field.name == "gd_inputs":
+        for field in ensemble.neuron_fields_list:
+            if field.name == "inputs" or field.name == "gd_inputs":
                 attr = "value" if field.name == "inputs" else "gd_value"
-                for (index, src) in enumerate(net.source_list):
+                for (index, src) in enumerate(ensemble.source_list):
                     key = ensemble.name + "_" + field.name + "_" + str(index)
-                    src_buff = src.name + "_" + attr
+                    src_buff = src.source_ensemble.name + "_" + attr
                     if src_buff in net.buffer_list:
                         if src.is_dim_fixed:
                             src.copy = False
@@ -871,6 +872,9 @@ def main():
                         buff.shape = (0,)
                         buff.name = key
                         net.buffer_list[buff.name] = buff
+
+    for key, value in net.buffer_list.iteritems():
+        print key, value.shape
 
 '''
     x.state = 2
