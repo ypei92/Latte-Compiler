@@ -185,7 +185,7 @@ class ast_visitor(ast.NodeVisitor):
                     LayerNameList.append(targetname)
 
             if self.state == 2:
-                if targetstr == 'the_sum' or targetstr == 'maxval' or targetstr == 'target_label':
+                if targetstr == 'the_sum' or targetstr == 'max_val' or targetstr == 'target_label':
                     targetstr = 'int ' + targetstr
                 st = self.get_indent() + targetstr + ' = ' + valuestr + ';'
 
@@ -1079,51 +1079,6 @@ def main():
     for key, value in net.buffer_list.iteritems():
         print key, value.shape
 
-
-
-    # fw = open("./output/test.cpp", "w+a")
-    # #x.visit(forward_func_ast[0])
-
-    # y.setParam(['data', 'loaddata'], ['data_value', 'loaddata'], 0, 250, False)
-    # y.visit(forward_func_ast[0])
-    # y.setParam(['data'], ['labe_lvalue'], 0, 1, False)
-    # y.visit(forward_func_ast[1])
-    # y.setParam(['neuron'], ['fc1'], 250, 100, True)
-    # y.visit(forward_func_ast[2])
-    # y.setParam(['neuron'], ['fc2'], 100, 10, True)
-    # y.visit(forward_func_ast[3])
-    # y.setParam(['input', 'prob', 'loss'], ['fc2_value', 'loss_prob', 'loss_value'], 10, 10, False)
-    # y.visit(forward_func_ast[4])
-    # y.setParam(['input', 'prob', 'loss'], ['fc2_value', 'loss_prob', 'loss_value'], 10, 10, False)
-    # y.visit(backward_func_ast[4])
-    # y.setParam(['neuron'], ['fc2'], 100, 10, True)
-    # y.visit(backward_func_ast[3])
-    # y.setParam(['neuron'], ['fc1'], 250, 100, True)
-    # y.visit(backward_func_ast[2])
-    # y.setParam(['data'], ['labe_lvalue'], 0, 1, False)
-    # y.visit(backward_func_ast[1])
-    # y.setParam(['data', 'loaddata'], ['data_value', 'loaddata'], 0, 250, False)
-    # y.visit(backward_func_ast[0])
-
-    
-    # print "forward:"
-    # x.visit(forward_func_ast[0])
-    # x.visit(forward_func_ast[1])
-    # x.visit(forward_func_ast[2])
-    # x.visit(forward_func_ast[3])
-    # x.visit(forward_func_ast[4])
-
-    # print "backward:"
-    # x.visit(backward_func_ast[4])
-    # x.visit(backward_func_ast[3])
-    # x.visit(backward_func_ast[2])
-    # x.visit(backward_func_ast[1])
-    # x.visit(backward_func_ast[0])
-
-    # fw.close()
-
-
-    # ast_print('MemoryDataLayer', forward_func_ast[0])
 
     # for ensemble in net.ensemble_list:
     #     if ensemble.ensemble_type == "DataEnsemble":

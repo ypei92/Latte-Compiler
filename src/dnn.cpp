@@ -51,9 +51,9 @@ void forward() {
     }
 
     int the_sum = 0.0;
-    max_val = -100000000;
+    int max_val = -100000000;
     for (i = 0 ; i < 10 ; i ++) { 
-        int maxval = max(maxval, fc2_value[i]);
+        maxval = max(maxval, fc2_value[i]);
     }
     for (i = 0 ; i < 10 ; i ++) { 
         loss_prob[i] = exp(fc2_value[i] - maxval);

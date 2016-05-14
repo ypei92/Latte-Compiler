@@ -34,5 +34,14 @@ float* zeros(int d1, int d2, int d3){
     return buffer;
 }
 
-//float log( float a ) {
+float max(float a , float b) {
+    if (a > b)
+        return a;
+    else
+        return b;
+}
+
+int convert_int(float a) {
+    return (int) a;
+}
 
