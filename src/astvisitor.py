@@ -26,6 +26,7 @@ backward_func_ast = []
 forward_func_actuals =[]
 backward_func_actuals =[]
 shared_buffer_list = []
+allocated_buffer_list = []
 
 mapping_func_ast = []
 
@@ -1040,8 +1041,14 @@ def main():
 
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
-            if field.name == "inputs" or field.name == "gd_inputs":
-                attr = "value" if field.name == "inputs" else "gd_value"
+            if field.name == "inputs" or field.name == "gd_inputs" or field.name == "prob":
+                attr = ""
+                if field.name == "inputs":
+                    attr = "value"
+                elif field.name == "gd_inputs":
+                    attr = "gd_value"
+                else:
+                    attr = "gd_value"
                 for (index, src) in enumerate(ensemble.source_list):
                     key = ensemble.name + "_" + field.name + "_" + str(index)
                     src_buff = src.source_ensemble.name + "_" + attr
@@ -1137,9 +1144,11 @@ def main():
     output_file = open('dnn.cpp', 'w+a')
     output_file.write("#include \"solver.h\"\n")
 
+
     for key, value in net.buffer_list.iteritems():
         if value.new:
             output_file.write("float* " + key + " = " + value.init_func + "(" + str(value.shape[0]) + ", " + str(value.shape[1]) + ", 1);\n")
+            allocated_buffer_list.append(key)
         else:
             output_file.write("float* " + key + " = " + value.src.name + ";\n")
 

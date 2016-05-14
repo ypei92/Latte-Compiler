@@ -25,6 +25,8 @@ float* fc1_inputs_0 = data_value;
 float* fc1_gd_inputs_0 = data_gd_value;
 float* fc2_inputs_0 = fc1_value;
 float* fc2_gd_inputs_0 = fc1_gd_value;
+float* loss_prob_0 = fc2_gd_value;
+float* loss_prob_1 = label_gd_value;
 
 
 void forward() {
