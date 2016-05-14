@@ -1181,6 +1181,20 @@ def main():
     x.visit(backward_func_ast[0])
     output_file.write("}")
 
+    output_file.write("\n\nvoid update() {\n")
+    for ensemble in net.ensemble_list:
+        if ensemble.ensemble_type == "Ensemble":
+            for param in ensemble.params:
+                d1 = net.buffer_list[param.name].shape[0]
+                d2 = net.buffer_list[param.name].shape[1]
+                output_file.write("    for(int i = 0; i < " + str(d2) + "; ++i){\n")
+                output_file.write("        for(int j = 0; j < " + str(d1) + "; ++j){\n")
+                output_file.write("            " + param.name + "[i * " + str(d2)+ " + j] += " + param.gradient_name + "[i * " + str(d2)+ " + j];\n")
+                output_file.write("        }\n")
+                output_file.write("    }\n")
+    output_file.write("}")
+
+
     output_file.write("\n\n\nint main(){\n")
     output_file.write("vector<float*> buff;\n")
     output_file.write("vector<int> dim;\n")
@@ -1191,6 +1205,7 @@ def main():
                 output_file.write("dim.push_back(" + str(value.shape[0]*value.shape[1]) + ");\n")
             else:
                 print key + "     NOT CLEAR"
+
 
     output_file.write("    return 0;\n")
     output_file.write("}")

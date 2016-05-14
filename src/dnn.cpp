@@ -94,6 +94,29 @@ void backward() {
 
 }
 
+void update() {
+    for(int i = 0; i < 100; ++i){
+        for(int j = 0; j < 250; ++j){
+            fc1_weights[i * 100 + j] += fc1_gd_weights[i * 100 + j];
+        }
+    }
+    for(int i = 0; i < 100; ++i){
+        for(int j = 0; j < 1; ++j){
+            fc1_bias[i * 100 + j] += fc1_gd_bias[i * 100 + j];
+        }
+    }
+    for(int i = 0; i < 10; ++i){
+        for(int j = 0; j < 100; ++j){
+            fc2_weights[i * 10 + j] += fc2_gd_weights[i * 10 + j];
+        }
+    }
+    for(int i = 0; i < 10; ++i){
+        for(int j = 0; j < 1; ++j){
+            fc2_bias[i * 10 + j] += fc2_gd_bias[i * 10 + j];
+        }
+    }
+}
+
 
 int main(){
 vector<float*> buff;
