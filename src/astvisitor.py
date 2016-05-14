@@ -41,11 +41,11 @@ def initLayerDict():
             LayerDict[files[0:-3]] = stdpath + '/' + files
 
 class ast_visitor(ast.NodeVisitor):
-    def __init__(self, state):
+    def __init__(self):
         #Parsing top    state = 0
         #Parsing layer  state = 1
         #Parsing forward or backward state = 2
-        self.state = state
+        self.state = 0
         self.indent = 0
 
     def get_indent(self):
@@ -147,9 +147,26 @@ class ast_visitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         #for forward and backward
-        print
-        print 'FunctionDef part'
-        print 'FunctionDef part'
+        if self.state ==2 :
+            print
+            print 'FunctionDef part'
+            # node.name = '123'
+            for ch in ast.iter_child_nodes(node):
+                print 'Children of FunctionDef:', ch
+            print
+            self.indent += 4
+            st = ''
+            chlist = ast_visitor.get_chlist(self, node)
+            for ch in chlist[1:]:
+                st += ast_visitor.getStatement(self, ch)
+                #ast_visitor.getStatement(self, chch)
+                st += '\n'
+            self.indent -= 4
+            fw.write(st)
+            fw.write('\n')
+        else:
+            print "stateError"
+
 
     def getStatement(self, node):
         st = ''
@@ -213,6 +230,8 @@ class ast_visitor(ast.NodeVisitor):
                     st += '\n'
                 st += self.get_indent() + '}\n'
             return st
+        elif isinstance(node, ast.Pass):
+            return ''
                     # ast_visitor.self.get_indent(self, indent)
         # elif isinstance(ch, ast.Name):
         #     print 'Name: ', ch.id
@@ -329,9 +348,9 @@ class ast_visitor(ast.NodeVisitor):
         elif isinstance(node, ast.BinOp):
             print '        BinOp: '
             chlist = ast_visitor.get_chlist(self, node)
-            left = ast_visitor.getAssignValue(self, chlist[0])
+            left, leftlist = ast_visitor.getAssignValue(self, chlist[0])
             operater = ast_visitor.getOperator(self, chlist[1])
-            right = ast_visitor.getAssignValue(self, chlist[2])
+            right, leftlist = ast_visitor.getAssignValue(self, chlist[2])
             st = left + ' ' + operater + ' ' + right
         elif isinstance(node, ast.Tuple):
             st, tuplelist= ast_visitor.getTuple(self, node)
@@ -560,9 +579,6 @@ class ast_visitor(ast.NodeVisitor):
             # print node.name
             return node.name
 
-    # def generic_visit(self, node):
-    #     #print type(node).__name__
-    #     ast.NodeVisitor.generic_visit(self, node)
 
 
 def initStructure():
@@ -748,6 +764,39 @@ def searchNum(string):
     else:
         return -1
 
+def transform_fn(ensemble):
+    pass
+
+def remove_line_nodes(ast):
+    pass
+
+def drop_fixed_dims(ast, arg_info):
+    pass
+
+def add_neuron_loop(body, args, value):
+    pass
+
+def gen_copy_block(ensemble, net, index):
+    return ""
+
+def gen_forward(ensemble, net):
+    body = []
+    args = []
+    buff = net.buffer_list[ensemble.name + "_value"]
+    for(index, src) in enumerate(ensemble.source_list):
+        sink = ensemble.name + "_inputs_" + str(index)
+        ensemble.arg_info[sink] = src.is_dim_fixed
+        if src.copy:
+            args.append(src.source_ensemble.name + "_value")
+            ast = gen_copy_block(ensemble, net, index)
+            body.append(ast)
+
+    transform_fn(ensemble)
+
+
+def norm_forward(ensemble, net):
+    pass
+
 num_of_threads = 4;
 
 class Buffer:
@@ -760,7 +809,7 @@ class Buffer:
         self.reshape = reshape
 
 def main():
-    global net
+    global net, fw
 
     initLayerDict()
     net = NetNode()
@@ -775,7 +824,7 @@ def main():
     top_ast = ast.parse(top_expr)
     #ast_print(topfile, top_ast) 
 
-    x = ast_visitor(0)
+    x = ast_visitor()
     x.visit(top_ast)
 
     #print TopfileSymbolTable
@@ -795,13 +844,7 @@ def main():
         layer_ast = ast.parse(fcontent)
         x.visit(layer_ast)
         f.close()
-
     x.state = 2
-    x.visit(forward_func_ast[2])
-    ast_print('forward', forward_func_ast[2])
-    # for tree in forward_func_ast:
-    #     x.visit(tree)
-    #     ast_print('forward', tree) 
 
     counter = 0
     for ens in net.ensemble_list:
@@ -811,9 +854,24 @@ def main():
         ens.backward_actuals_list = backward_func_actuals[counter]
         counter += 1
 
+
+
+
+
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
-            if field.name == "inputs" or field.name == "gd_inputs":
+            if ensemble.ensemble_type == "NormalizationEnsemble":
+                buff = Buffer()
+                buff.init_func = "zeros"
+                buff.shape = (ensemble.source_list[0].size, net.batch_size)
+                buff.name = ensemble.name + "_prob"
+                net.buffer_list[buff.name] = buff
+                buff2 = Buffer()
+                buff2.init_func = "zeros"
+                buff2.shape = (1,1)
+                buff2.name = ensemble.name + "_value"
+                net.buffer_list[buff2.name] = buff2
+            elif field.name == "inputs" or field.name == "gd_inputs":
                 pass
             elif field.name == "value" or field.name == "gd_value":
                 buff = Buffer()
@@ -852,7 +910,7 @@ def main():
                     key = ensemble.name + "_" + field.name + "_" + str(index)
                     src_buff = src.source_ensemble.name + "_" + attr
                     if src_buff in net.buffer_list:
-                        if src.is_dim_fixed:
+                        if src.is_dim_fixed: #all
                             src.copy = False
                             buff = Buffer(False, net.buffer_list[src_buff], True)
                             buff.shape = (src.size, net.batch_size)
@@ -864,8 +922,11 @@ def main():
                             buff.name = key
                             net.buffer_list[buff.name] = buff
                         else:
-                            #TODO
-                            pass
+                            src.copy = True
+                            buff = Buffer()
+                            buff.shape = (src.size, ensemble.neuron_size)
+                            buff.name = key
+                            net.buffer_list[buff.name]
                     else:
                         buff = Buffer()
                         buff.init_func = field.init
@@ -875,6 +936,179 @@ def main():
 
     for key, value in net.buffer_list.iteritems():
         print key, value.shape
+
+
+
+
+
+    fw = open("./output/test.cpp", "w+a")
+    #x.visit(forward_func_ast[0])
+    y = ast_transformer()
+
+    y.setParam(['data', 'loaddata'], ['data_value', 'loaddata'], 0, 250, False)
+    y.visit(forward_func_ast[0])
+    y.setParam(['data'], ['labe_lvalue'], 0, 1, False)
+    y.visit(forward_func_ast[1])
+    y.setParam(['neuron'], ['fc1'], 250, 100, True)
+    y.visit(forward_func_ast[2])
+    y.setParam(['neuron'], ['fc2'], 100, 10, True)
+    y.visit(forward_func_ast[3])
+    y.setParam(['input', 'prob', 'loss'], ['fc2_value', 'loss_prob', 'loss_value'], 10, 10, False)
+    y.visit(forward_func_ast[4])
+    y.setParam(['input', 'prob', 'loss'], ['fc2_value', 'loss_prob', 'loss_value'], 10, 10, False)
+    y.visit(backward_func_ast[4])
+    y.setParam(['neuron'], ['fc2'], 100, 10, True)
+    y.visit(backward_func_ast[3])
+    y.setParam(['neuron'], ['fc1'], 250, 100, True)
+    y.visit(backward_func_ast[2])
+    y.setParam(['data'], ['labe_lvalue'], 0, 1, False)
+    y.visit(backward_func_ast[1])
+    y.setParam(['data', 'loaddata'], ['data_value', 'loaddata'], 0, 250, False)
+    y.visit(backward_func_ast[0])
+
+    
+    print "forward:"
+    x.visit(forward_func_ast[0])
+    x.visit(forward_func_ast[1])
+    x.visit(forward_func_ast[2])
+    x.visit(forward_func_ast[3])
+    x.visit(forward_func_ast[4])
+
+    print "backward:"
+    x.visit(backward_func_ast[4])
+    x.visit(backward_func_ast[3])
+    x.visit(backward_func_ast[2])
+    x.visit(backward_func_ast[1])
+    x.visit(backward_func_ast[0])
+
+    fw.close()
+
+
+    # ast_print('MemoryDataLayer', forward_func_ast[0])
+
+
+    # for key, value in net.buffer_list.iteritems():
+    #     if value.new:
+    #         pass
+    #     else:
+    #         pass
+
+    # for ensemble in net.ensemble_list:
+    #     if ensemble.ensemble_type == "DataEnsemble":
+    #         net.forward_task_list.append(Task("forward", ensemble.forward_actuals_list))
+    #     elif ensemble.ensemble_type == "Ensemble":
+    #         gen_forward(ensemble, net)
+    #     else: #normalization
+    #         norm_forward(ensemble, net)
+
+
+
+#========================================================================================================
+
+class ast_transformer(ast.NodeTransformer):
+    def __init__(self):
+        self.old_name = []
+        self.new_name = []
+        self.inputlength = 0
+        self.length = 0
+        self.if_add_dim = False
+
+    def setParam(self, old_name, new_name, inputlength, length, if_add_dim):
+        self.old_name = old_name
+        self.new_name = new_name
+        self.inputlength = inputlength
+        self.length = length
+        self.if_add_dim = if_add_dim
+
+    def visit_FunctionDef(self, node):
+        print "I'm here in Def"
+        self.generic_visit(node)
+        if self.if_add_dim:
+            print "I'm adding dim"
+            node.body = [ast.For(target=ast.Name(id='j', ctx=ast.Store()),
+                                 iter=ast.Call(func = ast.Name(id = 'range', ctx = ast.Load()),
+                                               args = [ast.Num(n=0), ast.Num(n=self.length)],
+                                               keywords=[],
+                                               starargs= None,
+                                               kwargs=None
+                                               ),
+                                 body = node.body,
+                                 orelse=[]
+                )]
+            return node
+        else:
+            return node
+
+    def visit_Call(self, node):
+        print "I'm here", node.func.id 
+        self.generic_visit(node)
+        if node.func.id == 'len':
+            return ast.copy_location(ast.Num(n = self.inputlength), node)
+        return node
+
+    def visit_Subscript(self, node):
+        if self.if_add_dim:
+            if isinstance(node.value, ast.Attribute):
+                index = self.find_str(node.value.value.id)
+                if index != -1:
+                    node.value = ast.Name(id = self.new_name[index] + node.value.attr , ctx = node.ctx)
+                node.value = ast.Subscript(value = node.value ,
+                                           slice = ast.Index(value=Name(id='j', ctx =Load())),
+                                           ctx = node.ctx
+                                           )
+            elif isinstance(node.value, ast.Name):
+                index = self.find_str(node.value.id)
+                if index != -1:
+                    node.value.id = self.new_name[index]
+                node.value = ast.Subscript(value = node.value ,
+                                           slice = ast.Index(value=Name(id='j', ctx =Load())),
+                                           ctx = node.ctx
+                                           )
+        else:
+            if isinstance(node.value, ast.Attribute):
+                index = self.find_str(node.value.value.id)
+                if index != -1:
+                    node.value = ast.Name(id = self.new_name[index] + node.value.attr , ctx = node.ctx)
+            elif isinstance(node.value, ast.Name):
+                index = self.find_str(node.value.id)
+                if index != -1:
+                    node.value.id = self.new_name[index]
+        return node
+
+    def visit_Attribute(self, node):
+        #self.generic_visit(node)
+        for ch in ast.iter_fields(node):
+            print '        Fields', ch
+        print
+        if self.if_add_dim:
+            index = self.find_str(node.value.id)
+            if index != -1:
+                node = ast.Subscript(value = ast.Name(id = self.new_name[index] + node.attr , ctx = node.ctx),
+                                     slice = ast.Index(value=Name(id='j', ctx =Load())),
+                                     ctx = node.ctx
+                                    )
+            else:
+                node = ast.Subscript(value = node,
+                                     slice = ast.Index(value=Name(id='j', ctx =Load())),
+                                     ctx = node.ctx
+                                    )
+        return node
+
+    def get_chlist(self, node):
+        chlist = []
+        for ch in ast.iter_child_nodes(node):
+            chlist.append(ch)
+        return chlist 
+
+    def find_str(self, str):
+        length = len(self.old_name)
+        index = -1
+        for i in range(length):
+            if str == self.old_name[i]:
+                index = i
+        return index
+
+
 
 '''
     x.state = 2

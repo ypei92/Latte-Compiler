@@ -61,9 +61,8 @@ def forward(loss, prob, input, label):
     for i in range(0, len(input)) :
         prob[i] /= the_sum
 
-    label_value = int(label[0])
+    label_value = label[0]
     loss[0] -= log(max(prob[label_value], 0.00001))
-    return 0
 
 # def backward(prob, diff, label):
 #     for i in range(0, diff.size) :
@@ -76,8 +75,8 @@ def forward(loss, prob, input, label):
 #     return 0
 
 def backward(prob, label):
-    label_value = int(label[0])
+    label_value = label[0]
     prob[label_value] -= 1
-    return 0
+
         
 
