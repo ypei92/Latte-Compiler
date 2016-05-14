@@ -13,9 +13,9 @@ class MemoryDataEnsemble():
         self.batch_size = batch_size
         self.net_subgroup = 1
 
-    def forward(loaddata, data):
-        for i in range(0, len(data)):
-            data[i] = loaddata[i]
+    def forward(loaddata, value):
+        for i in range(0, len(value)):
+            value[i] = loaddata[i]
 
     def backward():
         pass

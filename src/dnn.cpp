@@ -1,7 +1,7 @@
 #include "solver.h"
 int i = 0, j = 0;
-float* datadata = new float[250];
-float* datadata = new float[1];
+float* data_loaddata = new float[250];
+float* label_loaddata = new float[1];
 float* data_value = zeros(250, 1, 1);
 float* data_gd_value = zeros(250, 1, 1);
 float* label_value = zeros(1, 1, 1);
@@ -29,11 +29,11 @@ float* loss_prob_1 = label_gd_value;
 
 void forward() {
     for (i = 0 ; i < 0 ; i ++) { 
-        data_value[i] = datadata[i];
+        data_value[i] = data_loaddata[i];
     }
 
     for (i = 0 ; i < 0 ; i ++) { 
-        label_value[i] = labeldata[i];
+        label_value[i] = label_loaddata[i];
     }
 
     for (j = 0 ; j < 100 ; j ++) { 
@@ -97,10 +97,33 @@ void backward() {
 
 }
 
+void update() {
+    for(int i = 0; i < 100; ++i){
+        for(int j = 0; j < 250; ++j){
+            fc1_weights[i * 100 + j] += fc1_gd_weights[i * 100 + j];
+        }
+    }
+    for(int i = 0; i < 100; ++i){
+        for(int j = 0; j < 1; ++j){
+            fc1_bias[i * 100 + j] += fc1_gd_bias[i * 100 + j];
+        }
+    }
+    for(int i = 0; i < 10; ++i){
+        for(int j = 0; j < 100; ++j){
+            fc2_weights[i * 10 + j] += fc2_gd_weights[i * 10 + j];
+        }
+    }
+    for(int i = 0; i < 10; ++i){
+        for(int j = 0; j < 1; ++j){
+            fc2_bias[i * 10 + j] += fc2_gd_bias[i * 10 + j];
+        }
+    }
+}
+
 
 int main(){
-    load_data(datadata, 250, "../test/fully-connected/datafile.txt");
-    load_data(datadata, 1, "../test/fully-connected/labelfile.txt");
+    load_data(data_loaddata, 250, "../test/fully-connected/datafile.txt");
+    load_data(label_loaddata, 1, "../test/fully-connected/labelfile.txt");
 
     vector<float*> buff;
     vector<int> dim;
@@ -137,6 +160,7 @@ int main(){
         backward();
         update();
         clear_value(buff, dim);
+        printf("loss_value = %d\n", loss_value)
     }
 
     delete []data_value;
@@ -156,7 +180,7 @@ int main(){
     delete []fc2_bias;
     delete []fc2_gd_bias;
     delete []loss_value;
-    delete []datadata;
-    delete []labeldata;
+    delete []data_loaddata;
+    delete []label_loaddata;
     return 0;
 }
