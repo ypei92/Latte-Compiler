@@ -30,6 +30,10 @@ allocated_buffer_list = []
 
 load_buffer_list = []
 load_buffer_list_size = []
+load_data_path = []
+
+output_buffer = []
+output_buffer_size = []
 
 mapping_func_ast = []
 
@@ -154,12 +158,12 @@ class ast_visitor(ast.NodeVisitor):
     def visit_FunctionDef(self, node):
         #for forward and backward
         if self.state ==2 :
-            print
-            print 'FunctionDef part'
+            # print
+            # print 'FunctionDef part'
             # node.name = '123'
-            for ch in ast.iter_child_nodes(node):
-                print 'Children of FunctionDef:', ch
-            print
+            # for ch in ast.iter_child_nodes(node):
+            #     print 'Children of FunctionDef:', ch
+            # print
             self.indent += 4
             st = ''
             chlist = ast_visitor.get_chlist(self, node)
@@ -611,10 +615,8 @@ class ast_transformer(ast.NodeTransformer):
         self.if_add_dim = if_add_dim
 
     def visit_FunctionDef(self, node):
-        print "I'm here in Def"
         self.generic_visit(node)
         if self.if_add_dim:
-            print "I'm adding dim"
             node.body = [ast.For(target=ast.Name(id='j', ctx=ast.Store()),
                                  iter=ast.Call(func = ast.Name(id = 'range', ctx = ast.Load()),
                                                args = [ast.Num(n=0), ast.Num(n=self.length)],
@@ -630,7 +632,6 @@ class ast_transformer(ast.NodeTransformer):
             return node
 
     def visit_Call(self, node):
-        print "I'm here", node.func.id 
         self.generic_visit(node)
         if node.func.id == 'len':
             return ast.copy_location(ast.Num(n = self.inputlength), node)
@@ -684,9 +685,9 @@ class ast_transformer(ast.NodeTransformer):
 
     def visit_Attribute(self, node):
         #self.generic_visit(node)
-        for ch in ast.iter_fields(node):
-            print '        Fields', ch
-        print
+        # for ch in ast.iter_fields(node):
+        #     print '        Fields', ch
+        # print
         if self.if_add_dim:
             index = self.find_str(node.value.id)
             if index != -1:
@@ -950,6 +951,7 @@ class Buffer:
         self.new = new
         self.src = src
         self.reshape = reshape
+        self.clear = True
 
 
 def main():
@@ -979,6 +981,14 @@ def main():
     initStructure()
     net.printNetNode()
 
+    n_epoch = eval(TopfileSymbolTable['n_epoch'][1])
+    for keys in TopfileSymbolTable.keys():
+        if ('data' in keys ) and ('file' in keys ):
+            load_data_path.append(TopfileSymbolTable[keys][1])
+    for keys in TopfileSymbolTable.keys():
+        if ('label' in keys ) and ('file' in keys ):
+            load_data_path.append(TopfileSymbolTable[keys][1])
+
     x.state = 1 #Finding Forward and Backward
     for ens in net.ensemble_list:
         ens_type = ens.ensemble_name
@@ -1002,11 +1012,6 @@ def main():
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
             if ensemble.ensemble_type == "NormalizationEnsemble":
-                buff = Buffer()
-                buff.init_func = "zeros"
-                buff.shape = (ensemble.source_list[0].size, net.batch_size)
-                buff.name = ensemble.name + "_prob"
-                net.buffer_list[buff.name] = buff
                 buff2 = Buffer()
                 buff2.init_func = "zeros"
                 buff2.shape = (1,1)
@@ -1025,6 +1030,8 @@ def main():
                 buff.init_func = field.init
                 buff.shape = (field.size, ensemble.neuron_size)
                 buff.name = ensemble.name + "_" + field.name
+                if field.name == "weights" or field.name == "bias":
+                    buff.clear = False
                 net.buffer_list[buff.name] = buff
             else:
                 buff = Buffer()
@@ -1032,16 +1039,6 @@ def main():
                 buff.shape = (ensemble.neuron_size,1)
                 buff.name = ensemble.name + "_" + field.name
                 net.buffer_list[buff.name] = buff
-
-    for ensemble in net.ensemble_list:
-        for param in ensemble.params:
-            param.value = net.buffer_list[param.name]
-            param.gradient = net.buffer_list[param.gradient_name]
-            buff = Buffer()
-            buff.init_func = "zeros"
-            buff.shape = param.value.shape
-            buff.name = param.hist_name
-            net.buffer_list[buff.name] = buff
 
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
@@ -1084,6 +1081,13 @@ def main():
                         buff.name = key
                         net.buffer_list[buff.name] = buff
 
+    for ensemble in net.ensemble_list:
+        if ensemble.ensemble_type == "DataEnsemble":
+            name = ensemble.name + ensemble.forward_actuals_list[1]
+            load_buffer_list.append(name)
+            load_buffer_list_size.append(ensemble.neuron_size)
+
+
     for key, value in net.buffer_list.iteritems():
         print key, value.shape
 
@@ -1104,7 +1108,7 @@ def main():
     output_file.write("#include \"solver.h\"\n")
     output_file.write("int i = 0, j = 0;\n")
     for i in range(len(load_buffer_list)):
-        output_file.write('float* '+load_buffer_list[0]+' = new float[',load_buffer_list_size[i],'];\n')
+        output_file.write('float* '+load_buffer_list[0]+' = new float['+str(load_buffer_list_size[i])+'];\n')
 
 
     for key, value in net.buffer_list.iteritems():
@@ -1157,6 +1161,29 @@ def main():
 
     output_file.write("\n\n\nint main(){\n")
 
+    for i in range(len(load_buffer_list)):
+        output_file.write('    load_data('+load_buffer_list[0]+', '
+                               +str(load_buffer_list_size[i])+', \"'
+                               + load_data_path[i] + '\");\n')
+
+    output_file.write('\n')
+    output_file.write("    vector<float*> buff;\n")
+    output_file.write("    vector<int> dim;\n\n")
+    for key, value in net.buffer_list.iteritems():
+        if value.new:
+            if value.clear:
+                output_file.write("    buff.push_back(" + key + ");\n")
+                output_file.write("    dim.push_back(" + str(value.shape[0]*value.shape[1]) + ");\n")
+            else:
+                print key + "     NOT CLEAR"
+
+    output_file.write('\n')
+    output_file.write("    for ( k = 0 ; k < " + str(n_epoch) + " ; k ++ ) {\n")
+    output_file.write("        forward();\n")
+    output_file.write("        backward();\n")
+    output_file.write("        update();\n")
+    output_file.write("        clear_value(buff, dim);\n")
+    output_file.write("    }\n\n")
 
 
     for string in allocated_buffer_list:
@@ -1164,13 +1191,15 @@ def main():
     for string in load_buffer_list:
         output_file.write('    delete []' + string + ';\n')
 
-
     output_file.write("    return 0;\n")
     output_file.write("}")
 
-    print "SHARED\n"
-    for key in shared_buffer_list:
-        print key
+    # print "SHARED\n"
+    # for key in shared_buffer_list:
+    #     print key
+
+    # print n_epoch
+    print load_data_path
 
 
 '''
