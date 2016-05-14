@@ -11,6 +11,7 @@ from tools import *
 import ast
 import numpy as np
 import sets as Set
+from collections import OrderedDict
 
 
 TopfileSymbolTable = {}
@@ -678,7 +679,7 @@ class NetNode:
     def __init__(self):
         self.name = ''
         self.ensemble_list = []
-        self.buffer_list = {}
+        self.buffer_list = OrderedDict()
         self.batch_size = 1
         self.forward_task_list = []
         self.backward_task_list = []
@@ -848,12 +849,12 @@ def main():
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
             if ensemble.ensemble_type == "NormalizationEnsemble":
-                buff = Buff()
+                buff = Buffer()
                 buff.init_func = "zeros"
                 buff.shape = (ensemble.source_list[0].size, net.batch_size)
                 buff.name = ensemble.name + "_prob"
                 net.buffer_list[buff.name] = buff
-                buff2 = Buff()
+                buff2 = Buffer()
                 buff2.init_func = "zeros"
                 buff2.shape = (1,1)
                 buff2.name = ensemble.name + "_value"
@@ -875,7 +876,7 @@ def main():
             else:
                 buff = Buffer()
                 buff.init_func = field.init
-                buff.shape = (ensemble.neuron_size,)
+                buff.shape = (ensemble.neuron_size,1)
                 buff.name = ensemble.name + "_" + field.name
                 net.buffer_list[buff.name] = buff
 
@@ -917,18 +918,26 @@ def main():
                     else:
                         buff = Buffer()
                         buff.init_func = field.init
-                        buff.shape = (0,)
+                        #TODO
+                        buff.shape = (1,1)
                         buff.name = key
                         net.buffer_list[buff.name] = buff
 
     for key, value in net.buffer_list.iteritems():
         print key, value.shape
 
+    output_file = open('dnn.cpp', 'w')
+    output_file.write("#include \"solver.h\"\n")
+
     for key, value in net.buffer_list.iteritems():
         if value.new:
-            pass
+            output_file.write("float* " + key + " = " + value.init_func + "(" + str(value.shape[0]) + ", " + str(value.shape[1]) + ", 1);\n")
         else:
-            pass
+            output_file.write("float* " + key + " = " + value.src.name + ";\n")
+
+    output_file.write("int main(){\n")
+    output_file.write("return 0;\n")
+    output_file.write("}")
 
     for ensemble in net.ensemble_list:
         if ensemble.ensemble_type == "DataEnsemble":
