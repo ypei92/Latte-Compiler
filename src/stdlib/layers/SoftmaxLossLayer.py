@@ -53,14 +53,14 @@ def forward(loss, prob, input, label):
     the_sum = 0.0
     max_val = -100000000
     for i in range(0, len(input)) :
-        maxval = max(maxval, input[i])
+        max_val = max(max_val, input[i])
     for i in range(0, len(input)) :
-        prob[i] = exp(input[i] - maxval)
+        prob[i] = exp(input[i] - max_val)
         the_sum += prob[i]
     for i in range(0, len(input)) :
         prob[i] /= the_sum
     target_label = convert_int(label[0])
-    loss[0] = log(max(prob[target_label], 0.00001))
+    loss[0] -= log(max(prob[target_label], 0.00001))
 
 # def backward(prob, diff, label):
 #     for i in range(0, diff.size) :

@@ -193,8 +193,12 @@ class ast_visitor(ast.NodeVisitor):
                     LayerNameList.append(targetname)
 
             if self.state == 2:
-                if targetstr == 'the_sum' or targetstr == 'max_val' or targetstr == 'target_label':
+                if targetstr == 'the_sum':
+                    targetstr = 'float ' + targetstr
+                elif targetstr == 'target_label':
                     targetstr = 'int ' + targetstr
+                elif targetstr == 'max_val' and isinstance(chlist[1], ast.Num):
+                    targetstr = 'float ' + targetstr
                 st = self.get_indent() + targetstr + ' = ' + valuestr + ';'
 
             return st
@@ -657,12 +661,11 @@ class ast_transformer(ast.NodeTransformer):
                 if isinstance(node.value, ast.Name):
                     index = self.find_shared_buffer(node.value.id)
                     if index == -1:
-                        node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
+                        node.slice = ast.Index(value=Name(id='j*'+str(self.inputlength)+' + i'))
                     else:
                         node.value.id = shared_buffer_list[index]
                 elif isinstance(node.value, ast.Attribute):
-                    node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
-                    
+                    node.slice = ast.Index(value=Name(id='j*'+str(self.inputlength)+' + i'))
             elif isinstance(node.value, ast.Name):
                 index = self.find_str(node.value.id)
                 if index != -1:
@@ -671,7 +674,7 @@ class ast_transformer(ast.NodeTransformer):
                 #                            slice = ast.Index(value=Name(id='j', ctx =Load())),
                 #                            ctx = node.ctx
                 #                            )
-                node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
+                node.slice = ast.Index(value=Name(id='j*'+str(self.inputlength)+' + i'))
         else:
             if isinstance(node.value, ast.Attribute):
                 index = self.find_str(node.value.value.id)
@@ -1129,9 +1132,9 @@ def main():
 
     y = ast_transformer()
 
-    y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 0, 250, False)
+    y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 250, 250, False)
     y.visit(forward_func_ast[0])
-    y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 0, 1, False)
+    y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 1, 1, False)
     y.visit(forward_func_ast[1])
     y.setParam(['neuron'], ['fc1'], 250, 100, True)
     y.visit(forward_func_ast[2])
@@ -1145,9 +1148,9 @@ def main():
     y.visit(backward_func_ast[3])
     y.setParam(['neuron'], ['fc1'], 250, 100, True)
     y.visit(backward_func_ast[2])
-    y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 0, 1, False)
+    y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 1, 1, False)
     y.visit(backward_func_ast[1])
-    y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 0, 250, False)
+    y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 1, 250, False)
     y.visit(backward_func_ast[0])
 
     
@@ -1167,9 +1170,9 @@ def main():
             for param in ensemble.params:
                 d1 = net.buffer_list[param.name].shape[0]
                 d2 = net.buffer_list[param.name].shape[1]
-                output_file.write("    for(int i = 0; i < " + str(d2) + "; ++i){\n")
-                output_file.write("        for(int j = 0; j < " + str(d1) + "; ++j){\n")
-                output_file.write("            " + param.name + "[i * " + str(d2)+ " + j] += " + param.gradient_name + "[i * " + str(d2)+ " + j];\n")
+                output_file.write("    for(i = 0; i < " + str(d2) + "; ++i){\n")
+                output_file.write("        for(j = 0; j < " + str(d1) + "; ++j){\n")
+                output_file.write("            " + param.name + "[i * " + str(d1)+ " + j] += " + param.gradient_name + "[i * " + str(d1)+ " + j];\n")
                 output_file.write("        }\n")
                 output_file.write("    }\n")
     output_file.write("}")
@@ -1178,9 +1181,13 @@ def main():
     output_file.write("\n\n\nint main(){\n")
 
     for i in range(len(load_buffer_list)):
+        output_file.write('    string s' + str(i) + ' = ' + '\"' + load_data_path[i] + '\";\n') 
+
+    for i in range(len(load_buffer_list)):
         output_file.write('    load_data('+load_buffer_list[i]+', '
-                               +str(load_buffer_list_size[i])+', \"'
-                               + load_data_path[i] + '\");\n')
+                               +str(load_buffer_list_size[i]) +', '
+                               + 's' + str(i) + ');\n'
+                               )
 
     output_file.write('\n')
     output_file.write("    vector<float*> buff;\n")
@@ -1194,12 +1201,12 @@ def main():
                 print key + "     NOT CLEAR"
 
     output_file.write('\n')
-    output_file.write("    for ( k = 0 ; k < " + str(n_epoch) + " ; k ++ ) {\n")
+    output_file.write("    for ( int k = 0 ; k < " + str(n_epoch) + " ; k ++ ) {\n")
     output_file.write("        forward();\n")
+    output_file.write("        printf(\"" + output_buffer[0] + " = %f\\n\", " + output_buffer[0] + "[0]);\n")
     output_file.write("        backward();\n")
     output_file.write("        update();\n")
-    output_file.write("        clear_value(buff, dim);\n")
-    output_file.write("        printf(\"" + output_buffer[0] + " = %d\\n\", " + output_buffer[0] + ")\n")
+    output_file.write("        clear_buffer(buff, dim);\n")
     output_file.write("    }\n\n")
 
 

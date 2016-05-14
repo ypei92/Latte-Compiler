@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <map> 
+#include <string>
 
 using namespace std;
 
@@ -52,14 +53,18 @@ void clear_buffer(vector<float*> buf, vector<int> size ) {
         return;
 
     for (int i = 0 ; i < length ; i ++) {
-        for(int j = 0 ; j < size[i] ; j ++i) {
+        for(int j = 0 ; j < size[i] ; j ++) {
             buf[i][j] = 0;
         }
     }
 }
 
-void load_data(float* a, float* size, char* filepath) {
-    ifstream fin(filepath);
-
+void load_data(float* a, int size, string filepath) {
+    const char *cstr = filepath.c_str();
+    ifstream fin(cstr);
+    for (int i = 0 ; i < size ; i ++ ) {
+        fin >> a[i];
+    }
+    fin.close();
 }
 
