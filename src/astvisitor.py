@@ -985,6 +985,7 @@ def main():
     net.printNetNode()
 
     n_epoch = eval(TopfileSymbolTable['n_epoch'][1])
+    update_rate = eval(TopfileSymbolTable['update_rate'][1])
     for keys in TopfileSymbolTable.keys():
         if ('data' in keys ) and ('file' in keys ):
             load_data_path.append(TopfileSymbolTable[keys][1])
@@ -1172,7 +1173,7 @@ def main():
                 d2 = net.buffer_list[param.name].shape[1]
                 output_file.write("    for(i = 0; i < " + str(d2) + "; ++i){\n")
                 output_file.write("        for(j = 0; j < " + str(d1) + "; ++j){\n")
-                output_file.write("            " + param.name + "[i * " + str(d1)+ " + j] += " + param.gradient_name + "[i * " + str(d1)+ " + j];\n")
+                output_file.write("            " + param.name + "[i * " + str(d1)+ " + j] -= " + str(update_rate) + '*' + param.gradient_name + "[i * " + str(d1)+ " + j];\n")
                 output_file.write("        }\n")
                 output_file.write("    }\n")
     output_file.write("}")
@@ -1227,6 +1228,7 @@ def main():
     print load_data_path
     print load_buffer_list
     print output_buffer
+    print update_rate
 
 
 '''

@@ -54,7 +54,6 @@ void forward() {
     float max_val = -100000000;
     for (i = 0 ; i < 10 ; i ++) { 
         max_val = max(max_val, fc2_value[i]);
-        printf("%f\n", fc2_value[i]);
     }
     for (i = 0 ; i < 10 ; i ++) { 
         loss_prob_0[i] = exp(fc2_value[i] - max_val);
@@ -101,22 +100,22 @@ void backward() {
 void update() {
     for(i = 0; i < 100; ++i){
         for(j = 0; j < 250; ++j){
-            fc1_weights[i * 250 + j] += fc1_gd_weights[i * 250 + j];
+            fc1_weights[i * 250 + j] -= 0.001*fc1_gd_weights[i * 250 + j];
         }
     }
     for(i = 0; i < 100; ++i){
         for(j = 0; j < 1; ++j){
-            fc1_bias[i * 1 + j] += fc1_gd_bias[i * 1 + j];
+            fc1_bias[i * 1 + j] -= 0.001*fc1_gd_bias[i * 1 + j];
         }
     }
     for(i = 0; i < 10; ++i){
         for(j = 0; j < 100; ++j){
-            fc2_weights[i * 100 + j] += fc2_gd_weights[i * 100 + j];
+            fc2_weights[i * 100 + j] -= 0.001*fc2_gd_weights[i * 100 + j];
         }
     }
     for(i = 0; i < 10; ++i){
         for(j = 0; j < 1; ++j){
-            fc2_bias[i * 1 + j] += fc2_gd_bias[i * 1 + j];
+            fc2_bias[i * 1 + j] -= 0.001*fc2_gd_bias[i * 1 + j];
         }
     }
 }
@@ -158,7 +157,7 @@ int main(){
     buff.push_back(loss_value);
     dim.push_back(1);
 
-    for ( int k = 0 ; k < 2 ; k ++ ) {
+    for ( int k = 0 ; k < 50 ; k ++ ) {
         forward();
         printf("loss_value = %f\n", loss_value[0]);
         backward();

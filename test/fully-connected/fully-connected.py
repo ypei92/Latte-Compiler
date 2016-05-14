@@ -7,7 +7,8 @@ def main():
 	net = Net(batch_size)
 	shape = (250,)
 	shapelabel = (1,)
-	n_epoch = 2
+	n_epoch = 50
+	update_rate = 0.001
 
 
 	data = MemoryDataLayer(net, "data", shape, batch_size, datafile)

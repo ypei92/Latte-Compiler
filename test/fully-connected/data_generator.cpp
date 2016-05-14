@@ -10,9 +10,9 @@ int main(){
     srand (time(NULL));
     ofstream fout("datafile.txt");
 
-    int a;
+    float a;
     for(int i = 0 ; i < 250 ; i ++){
-        a = rand()%10;
+        a = 2 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) - 1;
         fout << a << endl;
     }
 
