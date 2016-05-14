@@ -28,6 +28,9 @@ backward_func_actuals =[]
 shared_buffer_list = []
 allocated_buffer_list = []
 
+load_buffer_list = []
+load_buffer_list_size = []
+
 mapping_func_ast = []
 
 
@@ -948,6 +951,7 @@ class Buffer:
         self.src = src
         self.reshape = reshape
 
+
 def main():
     global net, output_file
 
@@ -1098,6 +1102,9 @@ def main():
 
     output_file = open('dnn.cpp', 'w+a')
     output_file.write("#include \"solver.h\"\n")
+    output_file.write("int i = 0, j = 0;\n")
+    for i in range(len(load_buffer_list)):
+        output_file.write('float* '+load_buffer_list[0]+' = new float[',load_buffer_list_size[i],'];\n')
 
 
     for key, value in net.buffer_list.iteritems():
@@ -1110,25 +1117,25 @@ def main():
 
     y = ast_transformer()
 
-    y.setParam(['data', 'loaddata'], ['data_value', 'data_loaddata'], 0, 250, False)
+    y.setParam(['data', 'loaddata'], ['data_value', load_buffer_list[0]], 0, 250, False)
     y.visit(forward_func_ast[0])
-    y.setParam(['data', 'loaddata'], ['label_value', 'label_loaddata'], 0, 1, False)
+    y.setParam(['data', 'loaddata'], ['label_value', load_buffer_list[1]], 0, 1, False)
     y.visit(forward_func_ast[1])
     y.setParam(['neuron'], ['fc1'], 250, 100, True)
     y.visit(forward_func_ast[2])
     y.setParam(['neuron'], ['fc2'], 100, 10, True)
     y.visit(forward_func_ast[3])
-    y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob', 'fc2_value', 'label_value'], 10, 10, False)
+    y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], 10, 10, False)
     y.visit(forward_func_ast[4])
-    y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob', 'fc2_value', 'label_value'], 10, 10, False)
+    y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], 10, 10, False)
     y.visit(backward_func_ast[4])
     y.setParam(['neuron'], ['fc2'], 100, 10, True)
     y.visit(backward_func_ast[3])
     y.setParam(['neuron'], ['fc1'], 250, 100, True)
     y.visit(backward_func_ast[2])
-    y.setParam(['data', 'loaddata'], ['label_value', 'label_loaddata'], 0, 1, False)
+    y.setParam(['data', 'loaddata'], ['label_value', load_buffer_list[1]], 0, 1, False)
     y.visit(backward_func_ast[1])
-    y.setParam(['data', 'loaddata'], ['data_value', 'data_loaddata'], 0, 250, False)
+    y.setParam(['data', 'loaddata'], ['data_value', load_buffer_list[0]], 0, 250, False)
     y.visit(backward_func_ast[0])
 
     
@@ -1149,6 +1156,15 @@ def main():
     output_file.write("}")
 
     output_file.write("\n\n\nint main(){\n")
+
+
+
+    for string in allocated_buffer_list:
+        output_file.write('    delete []' + string + ';\n')
+    for string in load_buffer_list:
+        output_file.write('    delete []' + string + ';\n')
+
+
     output_file.write("    return 0;\n")
     output_file.write("}")
 

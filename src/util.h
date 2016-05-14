@@ -1,6 +1,7 @@
 #include <vector>
 #include <math.h>
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <ctime>
 #include <map> 
@@ -43,5 +44,22 @@ float max(float a , float b) {
 
 int convert_int(float a) {
     return (int) a;
+}
+
+void clear_buffer(vector<float*> buf, vector<int> size ) {
+    int length = buf.size();
+    if(length != size.size())
+        return;
+
+    for (int i = 0 ; i < length ; i ++) {
+        for(int j = 0 ; j < size[i] ; j ++i) {
+            buf[i][j] = 0;
+        }
+    }
+}
+
+void load_data(float* a, float* size, char* filepath) {
+    ifstream fin(filepath);
+
 }
 
