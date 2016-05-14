@@ -994,9 +994,6 @@ def main():
         counter += 1
 
 
-
-
-
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
             if ensemble.ensemble_type == "NormalizationEnsemble":
@@ -1148,6 +1145,7 @@ def main():
 
 
     y = ast_transformer()
+
     y.setParam(['data', 'loaddata'], ['data_value', 'data_loaddata'], 0, 250, False)
     y.visit(forward_func_ast[0])
     y.setParam(['data', 'loaddata'], ['label_value', 'label_loaddata'], 0, 1, False)
