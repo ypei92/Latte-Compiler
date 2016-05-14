@@ -39,6 +39,9 @@ void forward() {
     for (j = 0 ; j < 100 ; j ++) { 
         for (i = 0 ; i < 250 ; i ++) { 
             fc1_value[j] += fc1_weights[j*250 + i] * fc1_inputs_0[i];
+            if((i % 50) == 0){
+                printf("%f\n", fc1_weights[j*250 + i]);
+            }
         }
         fc1_value[j] += fc1_bias[j];
     }
@@ -46,15 +49,19 @@ void forward() {
     for (j = 0 ; j < 10 ; j ++) { 
         for (i = 0 ; i < 100 ; i ++) { 
             fc2_value[j] += fc2_weights[j*100 + i] * fc2_inputs_0[i];
+            if((i % 10) == 0){
+                //printf("%f\n", fc2_value[j]);
+            }
         }
         fc2_value[j] += fc2_bias[j];
+        //printf("%f\n", fc2_value[j]);
     }
 
     float the_sum = 0.0;
     float max_val = -100000000;
     for (i = 0 ; i < 10 ; i ++) { 
         max_val = max(max_val, fc2_value[i]);
-        printf("%f\n", fc2_value[i]);
+        //printf("%f\n", fc2_value[i]);
     }
     for (i = 0 ; i < 10 ; i ++) { 
         loss_prob_0[i] = exp(fc2_value[i] - max_val);
@@ -123,6 +130,7 @@ void update() {
 
 
 int main(){
+    srand (static_cast <unsigned> (time(0)));
     string s0 = "../test/fully-connected/datafile.txt";
     string s1 = "../test/fully-connected/labelfile.txt";
     load_data(data_loaddata, 250, s0);
