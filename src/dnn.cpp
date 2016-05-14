@@ -39,9 +39,6 @@ void forward() {
     for (j = 0 ; j < 100 ; j ++) { 
         for (i = 0 ; i < 250 ; i ++) { 
             fc1_value[j] += fc1_weights[j*250 + i] * fc1_inputs_0[i];
-            if((i % 50) == 0){
-                printf("%f\n", fc1_weights[j*250 + i]);
-            }
         }
         fc1_value[j] += fc1_bias[j];
     }
@@ -49,22 +46,14 @@ void forward() {
     for (j = 0 ; j < 10 ; j ++) { 
         for (i = 0 ; i < 100 ; i ++) { 
             fc2_value[j] += fc2_weights[j*100 + i] * fc2_inputs_0[i];
-            if((i % 10) == 0){
-                //printf("%f\n", fc2_value[j]);
-            }
         }
         fc2_value[j] += fc2_bias[j];
-        //printf("%f\n", fc2_value[j]);
     }
 
     float the_sum = 0.0;
     float max_val = -100000000;
     for (i = 0 ; i < 10 ; i ++) { 
         max_val = max(max_val, fc2_value[i]);
-<<<<<<< HEAD
-=======
-        //printf("%f\n", fc2_value[i]);
->>>>>>> 90ede31db3c284f8fc09e4997fd16b7de9301fe4
     }
     for (i = 0 ; i < 10 ; i ++) { 
         loss_prob_0[i] = exp(fc2_value[i] - max_val);
@@ -111,29 +100,28 @@ void backward() {
 void update() {
     for(i = 0; i < 100; ++i){
         for(j = 0; j < 250; ++j){
-            fc1_weights[i * 250 + j] -= 0.001*fc1_gd_weights[i * 250 + j];
+            fc1_weights[i * 250 + j] -= 0.01*fc1_gd_weights[i * 250 + j];
         }
     }
     for(i = 0; i < 100; ++i){
         for(j = 0; j < 1; ++j){
-            fc1_bias[i * 1 + j] -= 0.001*fc1_gd_bias[i * 1 + j];
+            fc1_bias[i * 1 + j] -= 0.01*fc1_gd_bias[i * 1 + j];
         }
     }
     for(i = 0; i < 10; ++i){
         for(j = 0; j < 100; ++j){
-            fc2_weights[i * 100 + j] -= 0.001*fc2_gd_weights[i * 100 + j];
+            fc2_weights[i * 100 + j] -= 0.01*fc2_gd_weights[i * 100 + j];
         }
     }
     for(i = 0; i < 10; ++i){
         for(j = 0; j < 1; ++j){
-            fc2_bias[i * 1 + j] -= 0.001*fc2_gd_bias[i * 1 + j];
+            fc2_bias[i * 1 + j] -= 0.01*fc2_gd_bias[i * 1 + j];
         }
     }
 }
 
 
 int main(){
-    srand (static_cast <unsigned> (time(0)));
     string s0 = "../test/fully-connected/datafile.txt";
     string s1 = "../test/fully-connected/labelfile.txt";
     load_data(data_loaddata, 250, s0);
@@ -169,9 +157,10 @@ int main(){
     buff.push_back(loss_value);
     dim.push_back(1);
 
-    for ( int k = 0 ; k < 50 ; k ++ ) {
+    for ( int k = 0 ; k < 100 ; k ++ ) {
         forward();
-        printf("loss_value = %f\n", loss_value[0]);
+        printf(" label_prob = %f\t", loss_prob_0[convert_int(label_value[0])]);
+        printf(" loss = %f\n", loss_value[0]);
         backward();
         update();
         clear_buffer(buff, dim);

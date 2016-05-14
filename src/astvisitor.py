@@ -1133,26 +1133,112 @@ def main():
 
     y = ast_transformer()
 
-    y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 250, 250, False)
-    y.visit(forward_func_ast[0])
-    y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 1, 1, False)
-    y.visit(forward_func_ast[1])
-    y.setParam(['neuron'], ['fc1'], 250, 100, True)
-    y.visit(forward_func_ast[2])
-    y.setParam(['neuron'], ['fc2'], 100, 10, True)
-    y.visit(forward_func_ast[3])
-    y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], 10, 10, False)
-    y.visit(forward_func_ast[4])
-    y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], 10, 10, False)
-    y.visit(backward_func_ast[4])
-    y.setParam(['neuron'], ['fc2'], 100, 10, True)
-    y.visit(backward_func_ast[3])
-    y.setParam(['neuron'], ['fc1'], 250, 100, True)
-    y.visit(backward_func_ast[2])
-    y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 1, 1, False)
-    y.visit(backward_func_ast[1])
-    y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 1, 250, False)
-    y.visit(backward_func_ast[0])
+    # y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 250, 250, False)
+    # y.visit(forward_func_ast[0])
+    # y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 1, 1, False)
+    # y.visit(forward_func_ast[1])
+    # y.setParam(['neuron'], ['fc1'], 250, 100, True)
+    # y.visit(forward_func_ast[2])
+    # y.setParam(['neuron'], ['fc2'], 100, 10, True)
+    # y.visit(forward_func_ast[3])
+    # y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], 10, 10, False)
+    # y.visit(forward_func_ast[4])
+    # y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], 10, 10, False)
+    # y.visit(backward_func_ast[4])
+    # y.setParam(['neuron'], ['fc2'], 100, 10, True)
+    # y.visit(backward_func_ast[3])
+    # y.setParam(['neuron'], ['fc1'], 250, 100, True)
+    # y.visit(backward_func_ast[2])
+    # y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 1, 1, False)
+    # y.visit(backward_func_ast[1])
+    # y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 250, 250, False)
+    # y.visit(backward_func_ast[0])
+
+    for ensemble in net.ensemble_list:
+        if ensemble.ensemble_type == "DataEnsemble":
+            old_list = []
+            new_list = []
+            d1 = 1
+            for act in ensemble.forward_actuals_list:
+                key = ensemble.name + "_" + act
+                old_list.append(act)
+                new_list.append(key)
+                if key in net.buffer_list:
+                    d1 = net.buffer_list[key].shape[0]
+            y.setParam(old_list, new_list, d1, d1, False)
+            print old_list, new_list, d1, d1
+            y.visit(ensemble.forward_ast)
+        elif ensemble.ensemble_type == "Ensemble":
+            old_list = []
+            new_list = []
+            for act in ensemble.forward_actuals_list:
+                if act == "neuron":
+                    old_list.append(act)
+                    new_list.append(ensemble.name)
+            d1 = net.buffer_list[ensemble.name + "_weights"].shape[0]
+            d2 = net.buffer_list[ensemble.name + "_weights"].shape[1]
+            y.setParam(old_list, new_list, d1, d2, True)
+            print old_list, new_list, d1, d2
+            y.visit(ensemble.forward_ast)
+        else:
+            old_list = []
+            new_list = []
+            for act in ensemble.forward_actuals_list:
+                old_list.append(act)
+                if act == "loss":
+                    new_list.append(act + "_value")
+                    new_list.append(act + "_prob_0")
+                elif act == "input":
+                    new_list.append(ensemble.source_list[0].source_ensemble.name + "_value")
+                elif act == "label":
+                    new_list.append(act + "_value")
+            d1 = ensemble.source_list[0].source_ensemble.neuron_size
+            y.setParam(old_list, new_list, d1, d1, False)
+            print old_list, new_list, d1, d1
+            y.visit(ensemble.forward_ast)
+        
+    for ensemble in net.ensemble_list:
+        if ensemble.ensemble_type == "DataEnsemble":
+            old_list = []
+            new_list = []
+            d1 = 1
+            for act in ensemble.forward_actuals_list:
+                key = ensemble.name + "_" + act
+                old_list.append(act)
+                new_list.append(key)
+                if key in net.buffer_list:
+                    d1 = net.buffer_list[key].shape[0]
+            y.setParam(old_list, new_list, d1, d1, False)
+            print old_list, new_list, d1, d1
+            y.visit(ensemble.backward_ast)
+        elif ensemble.ensemble_type == "Ensemble":
+            old_list = []
+            new_list = []
+            for act in ensemble.forward_actuals_list:
+                if act == "neuron":
+                    old_list.append(act)
+                    new_list.append(ensemble.name)
+            d1 = net.buffer_list[ensemble.name + "_weights"].shape[0]
+            d2 = net.buffer_list[ensemble.name + "_weights"].shape[1]
+            y.setParam(old_list, new_list, d1, d2, True)
+            print old_list, new_list, d1, d2
+            y.visit(ensemble.backward_ast)
+        else:
+            old_list = []
+            new_list = []
+            for act in ensemble.forward_actuals_list:
+                old_list.append(act)
+                if act == "loss":
+                    new_list.append(act + "_value")
+                    new_list.append(act + "_prob_0")
+                elif act == "input":
+                    new_list.append(ensemble.source_list[0].source_ensemble.name + "_value")
+                elif act == "label":
+                    new_list.append(act + "_value")
+            d1 = ensemble.source_list[0].source_ensemble.neuron_size
+            y.setParam(old_list, new_list, d1, d1, False)
+            print old_list, new_list, d1, d1
+            y.visit(ensemble.backward_ast)
 
     
     output_file.write("\n\nvoid forward() {\n")
@@ -1204,7 +1290,8 @@ def main():
     output_file.write('\n')
     output_file.write("    for ( int k = 0 ; k < " + str(n_epoch) + " ; k ++ ) {\n")
     output_file.write("        forward();\n")
-    output_file.write("        printf(\"" + output_buffer[0] + " = %f\\n\", " + output_buffer[0] + "[0]);\n")
+    output_file.write("        printf(\" label_prob = %f\\t\", " + output_buffer[1] + "[convert_int(label_value[0])]);\n")
+    output_file.write("        printf(\" loss = %f\\n\", " + output_buffer[0] + "[0]);\n")
     output_file.write("        backward();\n")
     output_file.write("        update();\n")
     output_file.write("        clear_buffer(buff, dim);\n")
