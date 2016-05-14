@@ -15,12 +15,7 @@ float* fc2_weights = xavier(100, 10, 1);
 float* fc2_gd_weights = zeros(100, 10, 1);
 float* fc2_bias = zeros(1, 10, 1);
 float* fc2_gd_bias = zeros(1, 10, 1);
-float* loss_prob = zeros(10, 1, 1);
 float* loss_value = zeros(1, 1, 1);
-float* fc1_weights_hist = zeros(250, 100, 1);
-float* fc1_bias_hist = zeros(1, 100, 1);
-float* fc2_weights_hist = zeros(100, 10, 1);
-float* fc2_bias_hist = zeros(1, 10, 1);
 float* fc1_inputs_0 = data_value;
 float* fc1_gd_inputs_0 = data_gd_value;
 float* fc2_inputs_0 = fc1_value;
@@ -101,5 +96,33 @@ void backward() {
 
 
 int main(){
+vector<float*> buff;
+vector<int> dim;
+buff.push_back(data_value);
+dim.push_back(250);
+buff.push_back(data_gd_value);
+dim.push_back(250);
+buff.push_back(label_value);
+dim.push_back(1);
+buff.push_back(label_gd_value);
+dim.push_back(1);
+buff.push_back(fc1_value);
+dim.push_back(100);
+buff.push_back(fc1_gd_value);
+dim.push_back(100);
+buff.push_back(fc1_gd_weights);
+dim.push_back(25000);
+buff.push_back(fc1_gd_bias);
+dim.push_back(100);
+buff.push_back(fc2_value);
+dim.push_back(10);
+buff.push_back(fc2_gd_value);
+dim.push_back(10);
+buff.push_back(fc2_gd_weights);
+dim.push_back(1000);
+buff.push_back(fc2_gd_bias);
+dim.push_back(10);
+buff.push_back(loss_value);
+dim.push_back(1);
     return 0;
 }

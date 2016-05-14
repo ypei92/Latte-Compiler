@@ -947,6 +947,7 @@ class Buffer:
         self.new = new
         self.src = src
         self.reshape = reshape
+        self.clear = True
 
 def main():
     global net, output_file
@@ -998,11 +999,6 @@ def main():
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
             if ensemble.ensemble_type == "NormalizationEnsemble":
-                buff = Buffer()
-                buff.init_func = "zeros"
-                buff.shape = (ensemble.source_list[0].size, net.batch_size)
-                buff.name = ensemble.name + "_prob"
-                net.buffer_list[buff.name] = buff
                 buff2 = Buffer()
                 buff2.init_func = "zeros"
                 buff2.shape = (1,1)
@@ -1021,6 +1017,8 @@ def main():
                 buff.init_func = field.init
                 buff.shape = (field.size, ensemble.neuron_size)
                 buff.name = ensemble.name + "_" + field.name
+                if field.name == "weights" or field.name == "bias":
+                    buff.clear = False
                 net.buffer_list[buff.name] = buff
             else:
                 buff = Buffer()
@@ -1028,16 +1026,6 @@ def main():
                 buff.shape = (ensemble.neuron_size,1)
                 buff.name = ensemble.name + "_" + field.name
                 net.buffer_list[buff.name] = buff
-
-    for ensemble in net.ensemble_list:
-        for param in ensemble.params:
-            param.value = net.buffer_list[param.name]
-            param.gradient = net.buffer_list[param.gradient_name]
-            buff = Buffer()
-            buff.init_func = "zeros"
-            buff.shape = param.value.shape
-            buff.name = param.hist_name
-            net.buffer_list[buff.name] = buff
 
     for ensemble in net.ensemble_list:
         for field in ensemble.neuron_fields_list:
@@ -1194,6 +1182,16 @@ def main():
     output_file.write("}")
 
     output_file.write("\n\n\nint main(){\n")
+    output_file.write("vector<float*> buff;\n")
+    output_file.write("vector<int> dim;\n")
+    for key, value in net.buffer_list.iteritems():
+        if value.new:
+            if value.clear:
+                output_file.write("buff.push_back(" + key + ");\n")
+                output_file.write("dim.push_back(" + str(value.shape[0]*value.shape[1]) + ");\n")
+            else:
+                print key + "     NOT CLEAR"
+
     output_file.write("    return 0;\n")
     output_file.write("}")
 
