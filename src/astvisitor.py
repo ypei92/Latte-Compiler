@@ -11,6 +11,7 @@ from tools import *
 import ast
 import numpy as np
 import sets as Set
+from collections import OrderedDict
 
 
 TopfileSymbolTable = {}
@@ -162,8 +163,8 @@ class ast_visitor(ast.NodeVisitor):
                 #ast_visitor.getStatement(self, chch)
                 st += '\n'
             self.indent -= 4
-            fw.write(st)
-            fw.write('\n')
+            output_file.write(st)
+            output_file.write('\n')
         else:
             print "stateError"
 
@@ -579,6 +580,108 @@ class ast_visitor(ast.NodeVisitor):
             # print node.name
             return node.name
 
+class ast_transformer(ast.NodeTransformer):
+    def __init__(self):
+        self.old_name = []
+        self.new_name = []
+        self.inputlength = 0
+        self.length = 0
+        self.if_add_dim = False
+
+    def setParam(self, old_name, new_name, inputlength, length, if_add_dim):
+        self.old_name = old_name
+        self.new_name = new_name
+        self.inputlength = inputlength
+        self.length = length
+        self.if_add_dim = if_add_dim
+
+    def visit_FunctionDef(self, node):
+        print "I'm here in Def"
+        self.generic_visit(node)
+        if self.if_add_dim:
+            print "I'm adding dim"
+            node.body = [ast.For(target=ast.Name(id='j', ctx=ast.Store()),
+                                 iter=ast.Call(func = ast.Name(id = 'range', ctx = ast.Load()),
+                                               args = [ast.Num(n=0), ast.Num(n=self.length)],
+                                               keywords=[],
+                                               starargs= None,
+                                               kwargs=None
+                                               ),
+                                 body = node.body,
+                                 orelse=[]
+                )]
+            return node
+        else:
+            return node
+
+    def visit_Call(self, node):
+        print "I'm here", node.func.id 
+        self.generic_visit(node)
+        if node.func.id == 'len':
+            return ast.copy_location(ast.Num(n = self.inputlength), node)
+        return node
+
+    def visit_Subscript(self, node):
+        if self.if_add_dim:
+            if isinstance(node.value, ast.Attribute):
+                index = self.find_str(node.value.value.id)
+                if index != -1:
+                    node.value = ast.Name(id = self.new_name[index] + node.value.attr , ctx = node.ctx)
+                node.value = ast.Subscript(value = node.value ,
+                                           slice = ast.Index(value=Name(id='j', ctx =Load())),
+                                           ctx = node.ctx
+                                           )
+            elif isinstance(node.value, ast.Name):
+                index = self.find_str(node.value.id)
+                if index != -1:
+                    node.value.id = self.new_name[index]
+                node.value = ast.Subscript(value = node.value ,
+                                           slice = ast.Index(value=Name(id='j', ctx =Load())),
+                                           ctx = node.ctx
+                                           )
+        else:
+            if isinstance(node.value, ast.Attribute):
+                index = self.find_str(node.value.value.id)
+                if index != -1:
+                    node.value = ast.Name(id = self.new_name[index] + node.value.attr , ctx = node.ctx)
+            elif isinstance(node.value, ast.Name):
+                index = self.find_str(node.value.id)
+                if index != -1:
+                    node.value.id = self.new_name[index]
+        return node
+
+    def visit_Attribute(self, node):
+        #self.generic_visit(node)
+        for ch in ast.iter_fields(node):
+            print '        Fields', ch
+        print
+        if self.if_add_dim:
+            index = self.find_str(node.value.id)
+            if index != -1:
+                node = ast.Subscript(value = ast.Name(id = self.new_name[index] + node.attr , ctx = node.ctx),
+                                     slice = ast.Index(value=Name(id='j', ctx =Load())),
+                                     ctx = node.ctx
+                                    )
+            else:
+                node = ast.Subscript(value = node,
+                                     slice = ast.Index(value=Name(id='j', ctx =Load())),
+                                     ctx = node.ctx
+                                    )
+        return node
+
+    def get_chlist(self, node):
+        chlist = []
+        for ch in ast.iter_child_nodes(node):
+            chlist.append(ch)
+        return chlist 
+
+    def find_str(self, str):
+        length = len(self.old_name)
+        index = -1
+        for i in range(length):
+            if str == self.old_name[i]:
+                index = i
+        return index
 
 
 def initStructure():
@@ -687,7 +790,7 @@ class NetNode:
     def __init__(self):
         self.name = ''
         self.ensemble_list = []
-        self.buffer_list = {}
+        self.buffer_list = OrderedDict()
         self.batch_size = 1
         self.forward_task_list = []
         self.backward_task_list = []
@@ -809,7 +912,7 @@ class Buffer:
         self.reshape = reshape
 
 def main():
-    global net, fw
+    global net, output_file
 
     initLayerDict()
     net = NetNode()
@@ -888,7 +991,7 @@ def main():
             else:
                 buff = Buffer()
                 buff.init_func = field.init
-                buff.shape = (ensemble.neuron_size,)
+                buff.shape = (ensemble.neuron_size,1)
                 buff.name = ensemble.name + "_" + field.name
                 net.buffer_list[buff.name] = buff
 
@@ -930,7 +1033,8 @@ def main():
                     else:
                         buff = Buffer()
                         buff.init_func = field.init
-                        buff.shape = (0,)
+                        #TODO
+                        buff.shape = (1,1)
                         buff.name = key
                         net.buffer_list[buff.name] = buff
 
@@ -939,31 +1043,91 @@ def main():
 
 
 
+    # fw = open("./output/test.cpp", "w+a")
+    # #x.visit(forward_func_ast[0])
+
+    # y.setParam(['data', 'loaddata'], ['data_value', 'loaddata'], 0, 250, False)
+    # y.visit(forward_func_ast[0])
+    # y.setParam(['data'], ['labe_lvalue'], 0, 1, False)
+    # y.visit(forward_func_ast[1])
+    # y.setParam(['neuron'], ['fc1'], 250, 100, True)
+    # y.visit(forward_func_ast[2])
+    # y.setParam(['neuron'], ['fc2'], 100, 10, True)
+    # y.visit(forward_func_ast[3])
+    # y.setParam(['input', 'prob', 'loss'], ['fc2_value', 'loss_prob', 'loss_value'], 10, 10, False)
+    # y.visit(forward_func_ast[4])
+    # y.setParam(['input', 'prob', 'loss'], ['fc2_value', 'loss_prob', 'loss_value'], 10, 10, False)
+    # y.visit(backward_func_ast[4])
+    # y.setParam(['neuron'], ['fc2'], 100, 10, True)
+    # y.visit(backward_func_ast[3])
+    # y.setParam(['neuron'], ['fc1'], 250, 100, True)
+    # y.visit(backward_func_ast[2])
+    # y.setParam(['data'], ['labe_lvalue'], 0, 1, False)
+    # y.visit(backward_func_ast[1])
+    # y.setParam(['data', 'loaddata'], ['data_value', 'loaddata'], 0, 250, False)
+    # y.visit(backward_func_ast[0])
+
+    
+    # print "forward:"
+    # x.visit(forward_func_ast[0])
+    # x.visit(forward_func_ast[1])
+    # x.visit(forward_func_ast[2])
+    # x.visit(forward_func_ast[3])
+    # x.visit(forward_func_ast[4])
+
+    # print "backward:"
+    # x.visit(backward_func_ast[4])
+    # x.visit(backward_func_ast[3])
+    # x.visit(backward_func_ast[2])
+    # x.visit(backward_func_ast[1])
+    # x.visit(backward_func_ast[0])
+
+    # fw.close()
 
 
-    fw = open("./output/test.cpp", "w+a")
-    #x.visit(forward_func_ast[0])
+    # ast_print('MemoryDataLayer', forward_func_ast[0])
+
+    # for ensemble in net.ensemble_list:
+    #     if ensemble.ensemble_type == "DataEnsemble":
+    #         net.forward_task_list.append(Task("forward", ensemble.forward_actuals_list))
+    #     elif ensemble.ensemble_type == "Ensemble":
+    #         gen_forward(ensemble, net)
+    #     else: #normalization
+    #         norm_forward(ensemble, net)
+
+
+
+#========================================================================================================
+
+    output_file = open('dnn.cpp', 'w+a')
+    output_file.write("#include \"solver.h\"\n")
+
+    for key, value in net.buffer_list.iteritems():
+        if value.new:
+            output_file.write("float* " + key + " = " + value.init_func + "(" + str(value.shape[0]) + ", " + str(value.shape[1]) + ", 1);\n")
+        else:
+            output_file.write("float* " + key + " = " + value.src.name + ";\n")
+
     y = ast_transformer()
-
-    y.setParam(['data', 'loaddata'], ['data_value', 'loaddata'], 0, 250, False)
+    y.setParam(['data', 'loaddata'], ['data_value', 'data_loaddata'], 0, 250, False)
     y.visit(forward_func_ast[0])
-    y.setParam(['data'], ['labe_lvalue'], 0, 1, False)
+    y.setParam(['data', 'loaddata'], ['label_value', 'label_loaddata'], 0, 1, False)
     y.visit(forward_func_ast[1])
     y.setParam(['neuron'], ['fc1'], 250, 100, True)
     y.visit(forward_func_ast[2])
     y.setParam(['neuron'], ['fc2'], 100, 10, True)
     y.visit(forward_func_ast[3])
-    y.setParam(['input', 'prob', 'loss'], ['fc2_value', 'loss_prob', 'loss_value'], 10, 10, False)
+    y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob', 'fc2_value', 'label_value'], 10, 10, False)
     y.visit(forward_func_ast[4])
-    y.setParam(['input', 'prob', 'loss'], ['fc2_value', 'loss_prob', 'loss_value'], 10, 10, False)
+    y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob', 'fc2_value', 'label_value'], 10, 10, False)
     y.visit(backward_func_ast[4])
     y.setParam(['neuron'], ['fc2'], 100, 10, True)
     y.visit(backward_func_ast[3])
     y.setParam(['neuron'], ['fc1'], 250, 100, True)
     y.visit(backward_func_ast[2])
-    y.setParam(['data'], ['labe_lvalue'], 0, 1, False)
+    y.setParam(['data', 'loaddata'], ['label_value', 'label_loaddata'], 0, 1, False)
     y.visit(backward_func_ast[1])
-    y.setParam(['data', 'loaddata'], ['data_value', 'loaddata'], 0, 250, False)
+    y.setParam(['data', 'loaddata'], ['data_value', 'data_loaddata'], 0, 250, False)
     y.visit(backward_func_ast[0])
 
     
@@ -981,133 +1145,10 @@ def main():
     x.visit(backward_func_ast[1])
     x.visit(backward_func_ast[0])
 
-    fw.close()
 
-
-    # ast_print('MemoryDataLayer', forward_func_ast[0])
-
-
-    # for key, value in net.buffer_list.iteritems():
-    #     if value.new:
-    #         pass
-    #     else:
-    #         pass
-
-    # for ensemble in net.ensemble_list:
-    #     if ensemble.ensemble_type == "DataEnsemble":
-    #         net.forward_task_list.append(Task("forward", ensemble.forward_actuals_list))
-    #     elif ensemble.ensemble_type == "Ensemble":
-    #         gen_forward(ensemble, net)
-    #     else: #normalization
-    #         norm_forward(ensemble, net)
-
-
-
-#========================================================================================================
-
-class ast_transformer(ast.NodeTransformer):
-    def __init__(self):
-        self.old_name = []
-        self.new_name = []
-        self.inputlength = 0
-        self.length = 0
-        self.if_add_dim = False
-
-    def setParam(self, old_name, new_name, inputlength, length, if_add_dim):
-        self.old_name = old_name
-        self.new_name = new_name
-        self.inputlength = inputlength
-        self.length = length
-        self.if_add_dim = if_add_dim
-
-    def visit_FunctionDef(self, node):
-        print "I'm here in Def"
-        self.generic_visit(node)
-        if self.if_add_dim:
-            print "I'm adding dim"
-            node.body = [ast.For(target=ast.Name(id='j', ctx=ast.Store()),
-                                 iter=ast.Call(func = ast.Name(id = 'range', ctx = ast.Load()),
-                                               args = [ast.Num(n=0), ast.Num(n=self.length)],
-                                               keywords=[],
-                                               starargs= None,
-                                               kwargs=None
-                                               ),
-                                 body = node.body,
-                                 orelse=[]
-                )]
-            return node
-        else:
-            return node
-
-    def visit_Call(self, node):
-        print "I'm here", node.func.id 
-        self.generic_visit(node)
-        if node.func.id == 'len':
-            return ast.copy_location(ast.Num(n = self.inputlength), node)
-        return node
-
-    def visit_Subscript(self, node):
-        if self.if_add_dim:
-            if isinstance(node.value, ast.Attribute):
-                index = self.find_str(node.value.value.id)
-                if index != -1:
-                    node.value = ast.Name(id = self.new_name[index] + node.value.attr , ctx = node.ctx)
-                node.value = ast.Subscript(value = node.value ,
-                                           slice = ast.Index(value=Name(id='j', ctx =Load())),
-                                           ctx = node.ctx
-                                           )
-            elif isinstance(node.value, ast.Name):
-                index = self.find_str(node.value.id)
-                if index != -1:
-                    node.value.id = self.new_name[index]
-                node.value = ast.Subscript(value = node.value ,
-                                           slice = ast.Index(value=Name(id='j', ctx =Load())),
-                                           ctx = node.ctx
-                                           )
-        else:
-            if isinstance(node.value, ast.Attribute):
-                index = self.find_str(node.value.value.id)
-                if index != -1:
-                    node.value = ast.Name(id = self.new_name[index] + node.value.attr , ctx = node.ctx)
-            elif isinstance(node.value, ast.Name):
-                index = self.find_str(node.value.id)
-                if index != -1:
-                    node.value.id = self.new_name[index]
-        return node
-
-    def visit_Attribute(self, node):
-        #self.generic_visit(node)
-        for ch in ast.iter_fields(node):
-            print '        Fields', ch
-        print
-        if self.if_add_dim:
-            index = self.find_str(node.value.id)
-            if index != -1:
-                node = ast.Subscript(value = ast.Name(id = self.new_name[index] + node.attr , ctx = node.ctx),
-                                     slice = ast.Index(value=Name(id='j', ctx =Load())),
-                                     ctx = node.ctx
-                                    )
-            else:
-                node = ast.Subscript(value = node,
-                                     slice = ast.Index(value=Name(id='j', ctx =Load())),
-                                     ctx = node.ctx
-                                    )
-        return node
-
-    def get_chlist(self, node):
-        chlist = []
-        for ch in ast.iter_child_nodes(node):
-            chlist.append(ch)
-        return chlist 
-
-    def find_str(self, str):
-        length = len(self.old_name)
-        index = -1
-        for i in range(length):
-            if str == self.old_name[i]:
-                index = i
-        return index
-
+    output_file.write("int main(){\n")
+    output_file.write("    return 0;\n")
+    output_file.write("}")
 
 
 '''

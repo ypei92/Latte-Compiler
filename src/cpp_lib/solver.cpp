@@ -1,4 +1,5 @@
 #include <math.h>
+#include "util.h"
 struct SolverState{
     int iter;
     float obj_val;
@@ -174,6 +175,11 @@ struct Solver{
     }
 };
 
+map<float*, vector<int> > dim_table;
+Solver solver;
+
+/*
+
 void sgd_update(float learning_rate, float momentum, NArray param, NArray gradient, NArray hist){
 
 }
@@ -199,34 +205,36 @@ void update(Solver& solver, Net& net){
     }
 }
 
-void update(Solver& solver, Param* param){
+void update(Solver& solver, Param param){
     float gradient = 0;
     l2_regularization(solver.params.regu_coef * param->regu_coef, param->value, gradient);
     sgd_update(solver.state.learning_rate * param->learning_rate,
         solver.state.momentum, param->value, gradent, param->hist);
 }
+*/
 
+/*
 void update(Solver& solver, Net& net, Param* param){
     for(int i = 0; i < net.params.size(); ++i){
         if(net.params[i] == param){
             update(solver, param);
         }
     }
-}
+}*/
 
-void solve(Solver& solver, Net& net){
+void solve(){
     set_learning_rate(solver.params.lrp, solver.state);
     set_momentum(solver.params.mp, solver.state);
-    int curr_train_epoch = net.train_epoch;
+    int curr_train_epoch = 1;
     while(curr_train_epoch < solver.params.max_epoch){
         solver.state.iter += 1;
-        forward(net, solver);
-        clear_gd(net);
-        backward(net, solver);
+        //forward(net, solver);
+        //clear_gd(net);
+        //backward(net, solver);
         solver.state.obj_val = get_loss(net);
         set_learning_rate(solver.params.lrp, solver.state);
         set_momentum(solver.params.mp, solver.state);
-        clear_values(net);
+        //clear_values(net);
         if(solver.state.iter % 20 == 0){
             cout << "LOSS: " << solver.state.obj_val << endl;
         }
