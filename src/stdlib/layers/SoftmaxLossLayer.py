@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 class SoftmaxLossNeuron:
-    def __init__(self, value = 0.0, gd_value = 0.0):
+    def __init__(self, value, gd_value = 0.0):
         self.value = value
         self.gd_value = gd_value
 
@@ -50,9 +50,8 @@ def SoftmaxLossLayer(name, net, input_ensemble, label_ensemble):
 
 
 def forward(loss, prob, input, label):
-    loss[0] = 0.0
     the_sum = 0.0
-    maxval = -100000000
+    max_val = -100000000
     for i in range(0, len(input)) :
         maxval = max(maxval, input[i])
     for i in range(0, len(input)) :
@@ -60,9 +59,8 @@ def forward(loss, prob, input, label):
         the_sum += prob[i]
     for i in range(0, len(input)) :
         prob[i] /= the_sum
-
-    labelvalue = label[0]
-    loss[0] -= log(max(prob[labelvalue], 0.00001))
+    target_label = convert_int(label[0])
+    loss[0] = log(max(prob[target_label], 0.00001))
 
 # def backward(prob, diff, label):
 #     for i in range(0, diff.size) :
@@ -75,8 +73,8 @@ def forward(loss, prob, input, label):
 #     return 0
 
 def backward(prob, label):
-    labelvalue = label[0]
-    prob[labelvalue] -= 1
+    target_label = convert_int(label[0])
+    prob[target_label] -= 1
 
         
 

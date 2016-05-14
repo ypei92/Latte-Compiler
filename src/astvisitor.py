@@ -25,6 +25,7 @@ forward_func_ast = []
 backward_func_ast = []
 forward_func_actuals =[]
 backward_func_actuals =[]
+shared_buffer_list = []
 
 mapping_func_ast = []
 
@@ -175,12 +176,19 @@ class ast_visitor(ast.NodeVisitor):
             chlist = ast_visitor.get_chlist(self, node)
             # print 'Assign: childs = ', len(chlist) 
             targetstr, targetname = ast_visitor.getAssignTarget(self, chlist[0])
-            valuestr, valuelist = ast_visitor.getAssignValue(self, chlist[1])
-            st = self.get_indent() + targetstr + ' = ' + valuestr + ';'
+            valuestr, valuelist = ast_visitor.getAssignValue(self, chlist[1]) 
+            
             if self.state == 0:
+                st = self.get_indent() + targetstr + ' = ' + valuestr + ';'
                 TopfileSymbolTable[targetname] = valuelist
                 if 'Layer' in st:
                     LayerNameList.append(targetname)
+
+            if self.state == 2:
+                if targetstr == 'the_sum' or targetstr == 'maxval' or targetstr == 'target_label':
+                    targetstr = 'int ' + targetstr
+                st = self.get_indent() + targetstr + ' = ' + valuestr + ';'
+
             return st
         elif isinstance(node, ast.AugAssign):
             chlist = ast_visitor.get_chlist(self, node)
@@ -580,6 +588,9 @@ class ast_visitor(ast.NodeVisitor):
             # print node.name
             return node.name
 
+
+
+
 class ast_transformer(ast.NodeTransformer):
     def __init__(self):
         self.old_name = []
@@ -631,7 +642,22 @@ class ast_transformer(ast.NodeTransformer):
                 #                            slice = ast.Index(value=Name(id='j', ctx =Load())),
                 #                            ctx = node.ctx
                 #                            )
-                node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
+                # if not isinstance(node.value, ast.Name):
+                #     node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
+                # else:
+                #     if 'gd_input' in node.value.id:
+                #         node.slice = node.slice
+                #     else:
+                #         node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
+                if isinstance(node.value, ast.Name):
+                    index = self.find_shared_buffer(node.value.id)
+                    if index == -1:
+                        node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
+                    else:
+                        node.value.id = shared_buffer_list[index]
+                elif isinstance(node.value, ast.Attribute):
+                    node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
+                    
             elif isinstance(node.value, ast.Name):
                 index = self.find_str(node.value.id)
                 if index != -1:
@@ -682,6 +708,14 @@ class ast_transformer(ast.NodeTransformer):
         index = -1
         for i in range(length):
             if str == self.old_name[i]:
+                index = i
+        return index
+
+    def find_shared_buffer(self, str):
+        length = len(shared_buffer_list)
+        index = -1
+        for i in range(length):
+            if str in shared_buffer_list[i]:
                 index = i
         return index
 
@@ -777,7 +811,7 @@ def initStructure():
             ens.ensemble_fields_list.append(FieldsNode('num_inputs', 'Num', '10'))
             ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'Train'))
             ens.neuron_size = 1
-            ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
+            ens.neuron_fields_list.append(FieldsNode('prob', 'Num', '0'))
             ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
             ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False, 10))
             ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False, 1))
@@ -1021,11 +1055,13 @@ def main():
                             buff.shape = (src.size, net.batch_size)
                             buff.name = key
                             net.buffer_list[buff.name] = buff
+                            shared_buffer_list.append(key)
                         elif src.is_one_to_one:
                             src.copy = False
                             buff = Buffer(False, net.buffer_list[src_buff])
                             buff.name = key
                             net.buffer_list[buff.name] = buff
+                            shared_buffer_list.append(key)
                         else:
                             src.copy = True
                             buff = Buffer()
@@ -1110,6 +1146,7 @@ def main():
         else:
             output_file.write("float* " + key + " = " + value.src.name + ";\n")
 
+
     y = ast_transformer()
     y.setParam(['data', 'loaddata'], ['data_value', 'data_loaddata'], 0, 250, False)
     y.visit(forward_func_ast[0])
@@ -1133,24 +1170,29 @@ def main():
     y.visit(backward_func_ast[0])
 
     
-    print "forward:"
+    output_file.write("\n\nvoid forward() {\n")
     x.visit(forward_func_ast[0])
     x.visit(forward_func_ast[1])
     x.visit(forward_func_ast[2])
     x.visit(forward_func_ast[3])
     x.visit(forward_func_ast[4])
+    output_file.write("}")
 
-    print "backward:"
+    output_file.write("\n\nvoid backward() {\n")
     x.visit(backward_func_ast[4])
     x.visit(backward_func_ast[3])
     x.visit(backward_func_ast[2])
     x.visit(backward_func_ast[1])
     x.visit(backward_func_ast[0])
+    output_file.write("}")
 
-
-    output_file.write("int main(){\n")
+    output_file.write("\n\n\nint main(){\n")
     output_file.write("    return 0;\n")
     output_file.write("}")
+
+    print "SHARED\n"
+    for key in shared_buffer_list:
+        print key
 
 
 '''

@@ -33,3 +33,6 @@ float* zeros(int d1, int d2, int d3){
     }
     return buffer;
 }
+
+//float log( float a ) {
+

@@ -27,7 +27,7 @@ float* fc2_inputs_0 = fc1_value;
 float* fc2_gd_inputs_0 = fc1_gd_value;
 
 
-
+void forward() {
     for (i = 0 ; i < 0 ; i ++) { 
         data_value[i] = data_loaddata[i];
     }
@@ -38,23 +38,22 @@ float* fc2_gd_inputs_0 = fc1_gd_value;
 
     for (j = 0 ; j < 100 ; j ++) { 
         for (i = 0 ; i < 250 ; i ++) { 
-            fc1_value[j] += fc1_weights[j*100 + i] * fc1_inputs[j*100 + i];
+            fc1_value[j] += fc1_weights[j*100 + i] * fc1_inputs_0[i];
         }
         fc1_value[j] += fc1_bias[j];
     }
 
     for (j = 0 ; j < 10 ; j ++) { 
         for (i = 0 ; i < 100 ; i ++) { 
-            fc2_value[j] += fc2_weights[j*10 + i] * fc2_inputs[j*10 + i];
+            fc2_value[j] += fc2_weights[j*10 + i] * fc2_inputs_0[i];
         }
         fc2_value[j] += fc2_bias[j];
     }
 
-    loss_value[0] = 0.0;
-    the_sum = 0.0;
-    maxval = -100000000;
+    int the_sum = 0.0;
+    max_val = -100000000;
     for (i = 0 ; i < 10 ; i ++) { 
-        maxval = max(maxval, fc2_value[i]);
+        int maxval = max(maxval, fc2_value[i]);
     }
     for (i = 0 ; i < 10 ; i ++) { 
         loss_prob[i] = exp(fc2_value[i] - maxval);
@@ -63,34 +62,40 @@ float* fc2_gd_inputs_0 = fc1_gd_value;
     for (i = 0 ; i < 10 ; i ++) { 
         loss_prob[i] /= the_sum;
     }
-    labelvalue = label_value[0];
-    loss_value[0] -= log(max(loss_prob[labelvalue], 1e-05));
+    int target_label = convert_int(label_value[0]);
+    loss_value[0] = log(max(loss_prob[target_label], 1e-05));
 
-    labelvalue = label_value[0];
-    loss_prob[labelvalue] -= 1;
+}
+
+void backward() {
+    int target_label = convert_int(label_value[0]);
+    loss_prob[target_label] -= 1;
 
     for (j = 0 ; j < 10 ; j ++) { 
         for (i = 0 ; i < 100 ; i ++) { 
-            fc2_gd_inputs[j*10 + i] += fc2_weights[j*10 + i] * fc2_gd_value[j];
+            fc2_gd_inputs_0[i] += fc2_weights[j*10 + i] * fc2_gd_value[j];
         }
         for (i = 0 ; i < 100 ; i ++) { 
-            fc2_gd_weights[j*10 + i] += fc2_inputs[j*10 + i] * fc2_gd_value[j];
+            fc2_gd_weights[j*10 + i] += fc2_inputs_0[i] * fc2_gd_value[j];
         }
         fc2_gd_bias[j] += fc2_gd_value[j];
     }
 
     for (j = 0 ; j < 100 ; j ++) { 
         for (i = 0 ; i < 250 ; i ++) { 
-            fc1_gd_inputs[j*100 + i] += fc1_weights[j*100 + i] * fc1_gd_value[j];
+            fc1_gd_inputs_0[i] += fc1_weights[j*100 + i] * fc1_gd_value[j];
         }
         for (i = 0 ; i < 250 ; i ++) { 
-            fc1_gd_weights[j*100 + i] += fc1_inputs[j*100 + i] * fc1_gd_value[j];
+            fc1_gd_weights[j*100 + i] += fc1_inputs_0[i] * fc1_gd_value[j];
         }
         fc1_gd_bias[j] += fc1_gd_value[j];
     }
 
 
 
+
+
+}
 
 
 int main(){
