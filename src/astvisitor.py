@@ -626,24 +626,26 @@ class ast_transformer(ast.NodeTransformer):
             if isinstance(node.value, ast.Attribute):
                 index = self.find_str(node.value.value.id)
                 if index != -1:
-                    node.value = ast.Name(id = self.new_name[index] + node.value.attr , ctx = node.ctx)
-                node.value = ast.Subscript(value = node.value ,
-                                           slice = ast.Index(value=Name(id='j', ctx =Load())),
-                                           ctx = node.ctx
-                                           )
+                    node.value = ast.Name(id = self.new_name[index] + '_' + node.value.attr , ctx = node.ctx)
+                # node.value = ast.Subscript(value = node.value ,
+                #                            slice = ast.Index(value=Name(id='j', ctx =Load())),
+                #                            ctx = node.ctx
+                #                            )
+                node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
             elif isinstance(node.value, ast.Name):
                 index = self.find_str(node.value.id)
                 if index != -1:
                     node.value.id = self.new_name[index]
-                node.value = ast.Subscript(value = node.value ,
-                                           slice = ast.Index(value=Name(id='j', ctx =Load())),
-                                           ctx = node.ctx
-                                           )
+                # node.value = ast.Subscript(value = node.value ,
+                #                            slice = ast.Index(value=Name(id='j', ctx =Load())),
+                #                            ctx = node.ctx
+                #                            )
+                node.slice = ast.Index(value=Name(id='j*'+str(self.length)+' + i'))
         else:
             if isinstance(node.value, ast.Attribute):
                 index = self.find_str(node.value.value.id)
                 if index != -1:
-                    node.value = ast.Name(id = self.new_name[index] + node.value.attr , ctx = node.ctx)
+                    node.value = ast.Name(id = self.new_name[index] + '_' + node.value.attr , ctx = node.ctx)
             elif isinstance(node.value, ast.Name):
                 index = self.find_str(node.value.id)
                 if index != -1:
@@ -658,7 +660,7 @@ class ast_transformer(ast.NodeTransformer):
         if self.if_add_dim:
             index = self.find_str(node.value.id)
             if index != -1:
-                node = ast.Subscript(value = ast.Name(id = self.new_name[index] + node.attr , ctx = node.ctx),
+                node = ast.Subscript(value = ast.Name(id = self.new_name[index] + '_' + node.attr , ctx = node.ctx),
                                      slice = ast.Index(value=Name(id='j', ctx =Load())),
                                      ctx = node.ctx
                                     )
