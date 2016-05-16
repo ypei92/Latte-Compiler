@@ -11,7 +11,7 @@ int main(){
     ofstream fout("datafile.txt");
 
     float a;
-    for(int i = 0 ; i < 250 ; i ++){
+    for(int i = 0 ; i < 9192; i ++){
         a = 2 * (static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) - 1;
         fout << a << endl;
     }

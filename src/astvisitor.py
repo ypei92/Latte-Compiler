@@ -36,6 +36,9 @@ output_buffer = []
 output_buffer_size = []
 
 mapping_func_ast = []
+layer1size = 0
+layer2size = 0
+shape = 0
 
 
 def initLayerDict():
@@ -270,7 +273,7 @@ class ast_visitor(ast.NodeVisitor):
         # elif isinstance(ch, ast.arguments):
         #     ast_visitor.getArgs(self, ch)
         else:
-            print '10don\'t care', node
+            print 'layer2sizedon\'t care', node
             ast.NodeVisitor.generic_visit(self, node)
 
 
@@ -782,46 +785,46 @@ def initStructure():
             ens.ensemble_fields_list.append(FieldsNode('neurons', 'Assign'))
             ens.ensemble_fields_list.append(FieldsNode('params', 'Assign'))
             ens.ensemble_fields_list.append(FieldsNode('batch_size', 'Num', '1'))
-            ens.neuron_size = 100
+            ens.neuron_size = layer1size
             ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
             ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0', 250))
-            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0', 250))
-            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier', 250))
-            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros', 250))
+            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0', shape))
+            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0', shape))
+            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier', shape))
+            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros', shape))
             ens.neuron_fields_list.append(FieldsNode('bias', 'Array', 'zeros'))
             ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
             ens.params.append(ParamNode('fc1', 'weights', 1.0 , 1.0))
             ens.params.append(ParamNode('fc1', 'bias', 2.0 , 0.0))
-            ens.source_list.append(SourceNode(net.ensemble_list[0], [0, eval(TopfileSymbolTable['shape'][1][0]) - 1], False, 250))
+            ens.source_list.append(SourceNode(net.ensemble_list[0], [0, eval(TopfileSymbolTable['shape'][1][0]) - 1], False, shape))
         elif counter == 3 :
             ens.ensemble_fields_list.append(FieldsNode('net', 'Var', 'net'))
             ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'fc2'))
             ens.ensemble_fields_list.append(FieldsNode('neurons', 'Assign'))
             ens.ensemble_fields_list.append(FieldsNode('params', 'Assign'))
             ens.ensemble_fields_list.append(FieldsNode('batch_size', 'Num', '1'))
-            ens.neuron_size = 10
+            ens.neuron_size = layer2size
             ens.neuron_fields_list.append(FieldsNode('value', 'Num', '0'))
             ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0', 100))
-            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0', 100))
-            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier', 100))
-            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros', 100))
+            ens.neuron_fields_list.append(FieldsNode('inputs', 'Array', '0', layer1size))
+            ens.neuron_fields_list.append(FieldsNode('gd_inputs', 'Array', '0', layer1size))
+            ens.neuron_fields_list.append(FieldsNode('weights', 'Array', 'xavier', layer1size))
+            ens.neuron_fields_list.append(FieldsNode('gd_weights', 'Array', 'zeros', layer1size))
             ens.neuron_fields_list.append(FieldsNode('bias', 'Array', 'zeros'))
             ens.neuron_fields_list.append(FieldsNode('gd_bias', 'Array', 'zeros'))
             ens.params.append(ParamNode('fc2', 'weights', 1.0 , 1.0))
             ens.params.append(ParamNode('fc2', 'bias', 2.0 , 0.0))
-            ens.source_list.append(SourceNode(net.ensemble_list[2], [0, 99], False, 100))
+            ens.source_list.append(SourceNode(net.ensemble_list[2], [0, layer1size-1], False, layer1size))
         elif counter == 4 :
             ens.ensemble_fields_list.append(FieldsNode('name', 'Str', 'loss'))
             ens.ensemble_fields_list.append(FieldsNode('neurons', 'Array', 'zeros'))
             ens.ensemble_fields_list.append(FieldsNode('connection', 'Empty'))
-            ens.ensemble_fields_list.append(FieldsNode('num_inputs', 'Num', '10'))
+            ens.ensemble_fields_list.append(FieldsNode('num_inputs', 'Num', 'layer2size'))
             ens.ensemble_fields_list.append(FieldsNode('phase', 'Str', 'Train'))
             ens.neuron_size = 1
             ens.neuron_fields_list.append(FieldsNode('prob', 'Num', '0'))
             ens.neuron_fields_list.append(FieldsNode('gd_value', 'Num', '0'))
-            ens.source_list.append(SourceNode(net.ensemble_list[3], [0, 9], False, 10))
+            ens.source_list.append(SourceNode(net.ensemble_list[3], [0, layer2size-1], False, layer2size))
             ens.source_list.append(SourceNode(net.ensemble_list[1], [0, 0], False, 1))
         counter += 1
 
@@ -958,7 +961,7 @@ class Buffer:
 
 
 def main():
-    global net, output_file
+    global net, output_file, layer1size, layer2size, shape
 
     initLayerDict()
     net = NetNode()
@@ -981,11 +984,15 @@ def main():
     pp.pprint(TopfileSymbolTable)
     print
 
-    initStructure()
-    net.printNetNode()
+    
 
     n_epoch = eval(TopfileSymbolTable['n_epoch'][1])
     update_rate = eval(TopfileSymbolTable['update_rate'][1])
+    layer1size = eval(TopfileSymbolTable['layer1size'][1])
+    layer2size = eval(TopfileSymbolTable['layer2size'][1])
+    shape = eval(TopfileSymbolTable['shape'][1][0])
+    initStructure()
+    net.printNetNode()
     for keys in TopfileSymbolTable.keys():
         if ('data' in keys ) and ('file' in keys ):
             load_data_path.append(TopfileSymbolTable[keys][1])
@@ -1118,7 +1125,8 @@ def main():
 
     output_file = open('dnn.cpp', 'w+a')
     output_file.write("#include \"solver.h\"\n")
-    output_file.write("int i = 0, j = 0;\n")
+    output_file.write("#include \"omp.h\"\n") 
+    #output_file.write("int i = 0, j = 0;\n")
     for i in range(len(load_buffer_list)):
         output_file.write('float* '+load_buffer_list[i]+' = new float['+str(load_buffer_list_size[i])+'];\n')
 
@@ -1133,25 +1141,25 @@ def main():
 
     y = ast_transformer()
 
-    # y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 250, 250, False)
+    # y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], shape, shape, False)
     # y.visit(forward_func_ast[0])
     # y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 1, 1, False)
     # y.visit(forward_func_ast[1])
-    # y.setParam(['neuron'], ['fc1'], 250, 100, True)
+    # y.setParam(['neuron'], ['fc1'], shape, layer1size, True)
     # y.visit(forward_func_ast[2])
-    # y.setParam(['neuron'], ['fc2'], 100, 10, True)
+    # y.setParam(['neuron'], ['fc2'], layer1size, layer2size, True)
     # y.visit(forward_func_ast[3])
-    # y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], 10, 10, False)
+    # y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], layer2size, layer2size, False)
     # y.visit(forward_func_ast[4])
-    # y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], 10, 10, False)
+    # y.setParam(['loss', 'prob', 'input', 'label'], ['loss_value', 'loss_prob_0', 'fc2_value', 'label_value'], layer2size, layer2size, False)
     # y.visit(backward_func_ast[4])
-    # y.setParam(['neuron'], ['fc2'], 100, 10, True)
+    # y.setParam(['neuron'], ['fc2'], layer1size, layer2size, True)
     # y.visit(backward_func_ast[3])
-    # y.setParam(['neuron'], ['fc1'], 250, 100, True)
+    # y.setParam(['neuron'], ['fc1'], shape, layer1size, True)
     # y.visit(backward_func_ast[2])
     # y.setParam(['value', 'loaddata'], ['label_value', load_buffer_list[1]], 1, 1, False)
     # y.visit(backward_func_ast[1])
-    # y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], 250, 250, False)
+    # y.setParam(['value', 'loaddata'], ['data_value', load_buffer_list[0]], shape, shape, False)
     # y.visit(backward_func_ast[0])
 
     for ensemble in net.ensemble_list:
@@ -1242,16 +1250,19 @@ def main():
 
     
     output_file.write("\n\nvoid forward() {\n")
+    output_file.write("    int i, j;\n")
     for i in range(len(forward_func_ast)):
         x.visit(forward_func_ast[i])
     output_file.write("}")
 
     output_file.write("\n\nvoid backward() {\n")
+    output_file.write("    int i, j;\n")
     for i in range(len(backward_func_ast)):
         x.visit(backward_func_ast[len(backward_func_ast) - 1 - i])
     output_file.write("}")
 
     output_file.write("\n\nvoid update() {\n")
+    output_file.write("    int i, j;\n")
     for ensemble in net.ensemble_list:
         if ensemble.ensemble_type == "Ensemble":
             for param in ensemble.params:
@@ -1288,11 +1299,15 @@ def main():
                 print key + "     NOT CLEAR"
 
     output_file.write('\n')
+    output_file.write("    long start, end;\n")
     output_file.write("    for ( int k = 0 ; k < " + str(n_epoch) + " ; k ++ ) {\n")
+    output_file.write("        start = getCurrentTime();\n")
     output_file.write("        forward();\n")
-    output_file.write("        printf(\" label_prob = %f\\t\", " + output_buffer[1] + "[convert_int(label_value[0])]);\n")
-    output_file.write("        printf(\" loss = %f\\n\", " + output_buffer[0] + "[0]);\n")
     output_file.write("        backward();\n")
+    output_file.write("        end = getCurrentTime();\n")
+    output_file.write("        printf(\" label_prob = %f\\t\", " + output_buffer[1] + "[convert_int(label_value[0])]);\n")
+    output_file.write("        printf(\" loss = %f\\t\", " + output_buffer[0] + "[0]);\n")
+    output_file.write("        printf(\" Running time = %ld\\n\", end - start);\n")
     output_file.write("        update();\n")
     output_file.write("        clear_buffer(buff, dim);\n")
     output_file.write("    }\n\n")
@@ -1316,6 +1331,8 @@ def main():
     print load_buffer_list
     print output_buffer
     print update_rate
+    print layer1size
+    print layer2size
 
 
 '''

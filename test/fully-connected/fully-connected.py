@@ -5,16 +5,17 @@ def main():
 	labelfile = '../test/fully-connected/labelfile.txt'
 	
 	net = Net(batch_size)
-	shape = (250,)
+	shape = (9192,)
 	shapelabel = (1,)
-	n_epoch = 100
-	update_rate = 0.01
-
+	n_epoch = 25
+	update_rate = 0.0005
+	layer1size = 4096
+	layer2size = 4096
 
 	data = MemoryDataLayer(net, "data", shape, batch_size, datafile)
 	label = MemoryDataLayer(net, "data", shapelabel, batch_size, labelfile)
-	fc1 = FullyConnectedLayer('fc1', net, data, 100)
-	fc2 = FullyConnectedLayer('fc2', net, fc1, 10)
+	fc1 = FullyConnectedLayer('fc1', net, data, layer1size)
+	fc2 = FullyConnectedLayer('fc2', net, fc1, layer2size)
 	loss= SoftmaxLossLayer('loss', net, fc2, label)
 
 	lr_policy = LRPolicy.Inv(0.01, 0.0001, 0.75)

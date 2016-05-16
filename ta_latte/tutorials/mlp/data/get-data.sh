@@ -1,1 +1,0 @@
-../../../examples/mnist/data/get-data.sh

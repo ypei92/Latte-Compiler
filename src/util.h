@@ -6,6 +6,8 @@
 #include <ctime>
 #include <map> 
 #include <string>
+#include <sys/time.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -67,4 +69,11 @@ void load_data(float* a, int size, string filepath) {
     }
     fin.close();
 }
+
+long getCurrentTime()  
+{  
+   struct timeval tv;  
+   gettimeofday(&tv,NULL);  
+   return tv.tv_sec * 1000 + tv.tv_usec / 1000;  
+} 
 
